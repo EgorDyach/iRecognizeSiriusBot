@@ -1,0 +1,91 @@
+
+
+12.11.2024: error: syntax error at or near "cat"
+
+12.11.2024: error: syntax error at or near "cat"
+
+12.11.2024: error: argument of OR must be type boolean, not type integer
+
+12.11.2024: error: argument of OR must be type boolean, not type integer
+
+12.11.2024 00:42:53: error: column "is_admin" of relation "users" does not exist
+
+12.11.2024 01:28:18: error: column "is_admin" of relation "users" does not exist
+
+12.11.2024 01:28:56: error: column "is_admin" of relation "users" does not exist
+
+12.11.2024 03:58:41: GrammyError: Call to 'editMessageText' failed! (400: Bad Request: message is not modified: specified new message content and reply markup are exactly the same as a current content and reply markup of the message)
+
+12.11.2024 03:59:02: GrammyError: Call to 'editMessageText' failed! (400: Bad Request: message is not modified: specified new message content and reply markup are exactly the same as a current content and reply markup of the message)
+
+12.11.2024 03:59:13: GrammyError: Call to 'editMessageText' failed! (400: Bad Request: message is not modified: specified new message content and reply markup are exactly the same as a current content and reply markup of the message)
+
+12.11.2024 04:30:38: GrammyError: Call to 'editMessageText' failed! (400: Bad Request: message can't be edited)
+
+12.11.2024 04:43:45: error: invalid input syntax for type integer: "NaN"
+
+12.11.2024 04:44:09: error: invalid input syntax for type integer: "NaN"
+
+12.11.2024 04:45:05: error: invalid input syntax for type integer: "NaN"
+
+12.11.2024 04:45:42: error: invalid input syntax for type integer: "NaN"
+
+12.11.2024 13:33:20: GrammyError: Call to 'editMessageText' failed! (400: Bad Request: there is no text in the message to edit)
+
+12.11.2024 13:46:32: error: relation "level_tasls" does not exist
+
+12.11.2024 13:52:22: error: invalid input syntax for type integer: "[object Object]1"
+
+12.11.2024 14:29:12: TypeError: Cannot read properties of undefined (reading 'level')
+
+12.11.2024 14:29:31: TypeError: Cannot read properties of undefined (reading 'level')
+
+12.11.2024 14:31:59: GrammyError: Call to 'editMessageText' failed! (400: Bad Request: message is not modified: specified new message content and reply markup are exactly the same as a current content and reply markup of the message)
+
+12.11.2024 14:32:09: error: column "role" does not exist
+
+12.11.2024 14:32:20: error: column "role" does not exist
+
+13.11.2024 19:47:52: error: relation "users" does not exist
+
+13.11.2024 19:49:31: GrammyError: Call to 'editMessageText' failed! (400: Bad Request: message can't be edited)
+
+13.11.2024 20:24:24: GrammyError: Call to 'editMessageText' failed! (400: Bad Request: can't parse entities: Unsupported start tag "br" at byte offset 20)
+
+13.11.2024 20:27:58: GrammyError: Call to 'editMessageText' failed! (400: Bad Request: message is not modified: specified new message content and reply markup are exactly the same as a current content and reply markup of the message)
+
+13.11.2024 23:12:25: GrammyError: Call to 'editMessageText' failed! (400: Bad Request: message is not modified: specified new message content and reply markup are exactly the same as a current content and reply markup of the message)
+
+14.11.2024 00:12:47: error: syntax error at or near "["
+
+14.11.2024 00:24:41: GrammyError: Call to 'editMessageText' failed! (400: Bad Request: can't parse entities: Unclosed end tag at byte offset 234)
+
+14.11.2024 01:23:22: error: syntax error at or near "("
+
+14.11.2024 01:57:59: error: syntax error at or near "("
+
+14.11.2024 01:59:28: error: relation "users" does not exist
+
+14.11.2024 01:59:48: error: syntax error at or near "("
+
+14.11.2024 02:08:49: error: there is no parameter $1
+
+14.11.2024 02:08:50: error: there is no parameter $1
+
+14.11.2024 02:08:51: error: there is no parameter $1
+
+14.11.2024 02:35:11: error: invalid input syntax for type integer: "5 OR id = 8 OR id = 9 OR id = 7 OR id = 10"
+
+14.11.2024 02:37:06: error: invalid input syntax for type integer: "5 OR id = 8 OR id = 9 OR id = 7 OR id = 10"
+
+14.11.2024 02:39:24: error: bind message supplies 1 parameters, but prepared statement "" requires 0
+
+14.11.2024 02:39:52: error: bind message supplies 1 parameters, but prepared statement "" requires 0
+
+14.11.2024 02:40:04: error: bind message supplies 1 parameters, but prepared statement "" requires 5
+
+14.11.2024 02:40:20: error: bind message supplies 1 parameters, but prepared statement "" requires 5
+
+14.11.2024 02:40:30: error: bind message supplies 1 parameters, but prepared statement "" requires 5
+
+14.11.2024 02:55:24: GrammyError: Call to 'editMessageText' failed! (400: Bad Request: message is not modified: specified new message content and reply markup are exactly the same as a current content and reply markup of the message)
