@@ -57,6 +57,18 @@ const taskTypeText = {
   friend: "👥 Собери команду",
   basic: "📝 Простое задание",
 };
+
+const tasksKeyboardEmoji = {
+  "not completed": "⭕️",
+  completed: "✅",
+  checking: "🔘",
+};
+
+const tasksKeyboardName = {
+  photo: "Фото-задание",
+  friend: "Дружеское задание",
+  basic: "Задание",
+};
 //
 //
 //
@@ -401,6 +413,167 @@ async function greeting(conversation: MyConversation, ctx: MyContext) {
     parse_mode: "HTML",
   });
 }
+const getTextAnswer = async (conversation: MyConversation, ctx: MyContext) => {
+  await ctx.reply(
+    "Для выполнения задания пришлите текстовое сообщение с ответом."
+  );
+  const res = await conversation.waitFor(":text", {
+    otherwise: async (ctx) =>
+      await ctx.reply(
+        "Необходимо прислать текстовое сообщение с нужным ответом."
+      ),
+  });
+  // @ts-ignore
+  await db.query(
+    "UPDATE tasks_status SET user_answer_text = $1, status =  $2 WHERE id = $3;",
+    [
+      // @ts-ignore
+      res.message.text,
+      "checking",
+      // @ts-ignore
+      ctx.session.taskId,
+    ]
+  );
+  await db.query(
+    "INSERT INTO tasks (tasks_status_id, checked_by) VALUES ($1, $2)",
+    // @ts-ignore
+    [ctx.session.taskId, null]
+  );
+  await ctx.reply("Ваше задание на проверке.", {
+    reply_markup: IKUserMenu,
+  });
+};
+const getPhotoAnswer = async (conversation: MyConversation, ctx: MyContext) => {
+  await ctx.reply(
+    "Для выполнения задания пришлите фото-селфи с нужным ответом."
+  );
+  const photoRes = await conversation.waitFor(":photo", {
+    otherwise: async (ctx) =>
+      await ctx.reply("Необходимо прислать фото-селфи с нужным ответом."),
+  });
+  await db.query(
+    "UPDATE tasks_status SET user_answer_photo = $1, user_answer_text = $2 AND status = $3 WHERE id = $4",
+    [
+      photoRes.message?.photo.at(-1)?.file_id || null,
+      photoRes.message?.caption || null,
+      "checking",
+      // @ts-ignore
+      ctx.session.taskId,
+    ]
+  );
+  await db.query(
+    "INSERT INTO tasks (tasks_status_id, checked_by) VALUES ($1, $2)",
+    // @ts-ignore
+    [ctx.session.taskId, null]
+  );
+  await ctx.reply("Ваше задание на проверке.", {
+    reply_markup: IKUserMenu,
+  });
+};
+
+const getFriendAnswer = async (
+  conversation: MyConversation,
+  ctx: MyContext
+) => {
+  const myKeyboard = new Keyboard()
+    .text("Создать команду")
+    .text("Присоединиться");
+  await ctx.reply(
+    "Для выполнения задания необходимо создать свою команду или присоединиться к кому-то.",
+    { reply_markup: myKeyboard }
+  );
+  const res = await conversation.waitFor(":text", {
+    otherwise: async (ctx) =>
+      await ctx.reply(
+        "Необходимо выбрать 'Создать команду' или 'Присоединиться'."
+      ),
+  });
+  let text = res.message?.text;
+  while (text !== "Создать команду" && text !== "Присоедниться") {
+    await ctx.reply(
+      "Необходимо выбрать 'Создать команду' или 'Присоединиться'."
+    );
+    const res = await conversation.waitFor(":text", {
+      otherwise: async (ctx) =>
+        await ctx.reply(
+          "Необходимо выбрать 'Создать команду' или 'Присоединиться'."
+        ),
+    });
+    text = res.message?.text;
+  }
+  if (text === "Присоедниться") {
+    const myKeyboard = new Keyboard().text("Создать команду").text("В меню");
+    await ctx.reply(
+      "Введите ник одного из участников команды в формате @example.",
+      {
+        reply_markup: myKeyboard,
+      }
+    );
+    const res = await conversation.waitFor(":text", {
+      otherwise: async (ctx) =>
+        await ctx.reply(
+          "Необходимо ввести ник одного из участников команды в формате @example.",
+          {
+            reply_markup: myKeyboard,
+          }
+        ),
+    });
+    let nick = res.message?.text;
+    let friendShipRes = await db.query(
+      "SELECT * FROM friendships WHERE $1 = ANY(users_nicks);",
+      [nick]
+    );
+    while (
+      !friendShipRes.rowCount &&
+      nick !== "Создать команду" &&
+      nick !== "В меню"
+    ) {
+      await ctx.reply(
+        "Не удалось найти такую команду. Убедитесь в правильности ника.",
+        {
+          reply_markup: myKeyboard,
+        }
+      );
+      const res = await conversation.waitFor(":text", {
+        otherwise: async (ctx) =>
+          await ctx.reply(
+            "Необходимо ввести ник одного из участников команды в формате @example.",
+            {
+              reply_markup: myKeyboard,
+            }
+          ),
+      });
+      nick = res.message?.text;
+      friendShipRes = await db.query(
+        "SELECT * FROM friendships WHERE $1 = ANY(users_nicks);",
+        [nick]
+      );
+    }
+    if (nick === "В меню") {
+      await setMenu(ctx);
+      return;
+    }
+    if (friendShipRes.rowCount) {
+      const user = await db.query("SELECT * FROM users WHERE id = $1", [
+        ctx.from?.id,
+      ]);
+      await db.query(
+        "UPDATE friendships SET users_nicks = $1 AND users_ids = $2 WHERE id = $3",
+        [
+          [...friendShipRes.rows[0].users_nicks, user.rows[0].nick],
+          [...friendShipRes.rows[0].users_nicks, user.rows[0].id],
+          friendShipRes.rows[0].id,
+        ]
+      );
+      await db.query("UPDATE users SET friendship_id = $1 WHERE id = $2", [
+        friendShipRes.rows[0].id,
+        user.rows[0].id,
+      ]);
+      return;
+    }
+  }
+  await ctx.reply("Окей, создали под вас команду");
+};
 bot.use(
   session({
     initial() {
@@ -408,6 +581,7 @@ bot.use(
       return {
         addingTaskLevel: 0,
         addingTaskType: "basic",
+        taskId: 0,
       };
     },
   }) as Middleware<Context>
@@ -417,6 +591,9 @@ bot.use(
 bot.use(conversations() as Middleware<Context>);
 bot.use(createConversation(greeting) as Middleware<Context>);
 bot.use(createConversation(createNewTask) as Middleware<Context>);
+bot.use(createConversation(getPhotoAnswer) as Middleware<Context>);
+bot.use(createConversation(getTextAnswer) as Middleware<Context>);
+bot.use(createConversation(getFriendAnswer) as Middleware<Context>);
 
 // HELPERS
 
@@ -450,8 +627,8 @@ bot.command("start", async (ctx) => {
   ).rows[0];
   if (!user) {
     await db.query(
-      `INSERT INTO users (id, nick, name, photo, college_group, course, role, points, tasks_0,tasks_1, tasks_2, tasks_3, tasks_4 )
-  VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13);`,
+      `INSERT INTO users (id, nick, name, photo, college_group, course, role, points)
+  VALUES ($1, $2, $3, $4, $5, $6, $7, $8);`,
       [
         ctx.from?.id,
         (ctx.from?.username || "").toLowerCase(),
@@ -461,11 +638,6 @@ bot.command("start", async (ctx) => {
         null,
         "student",
         0,
-        [],
-        [],
-        [],
-        [],
-        [],
       ]
     );
     await ctx.reply(
@@ -510,11 +682,8 @@ bot.on("callback_query:data", async (ctx) => {
       break;
 
     case "unlockLevelMenu":
-      const levels = await db.query("SELECT * FROM level_tasks");
-      const curLev =
-        levels.rows
-          .sort((a, b) => a.level - b.level)
-          .filter((el) => el.is_open)[0]?.level || 0;
+      const settings_ = await db.query("SELECT * FROM settings");
+      const curLev = settings_.rows[0].level;
       await ctx.editMessageText(
         `Вы уверены, что хотите открыть уровень ${curLev + 1}?`,
         { reply_markup: IKUnlockMenu }
@@ -523,23 +692,23 @@ bot.on("callback_query:data", async (ctx) => {
 
     case "unlockLevel":
       await ctx.editMessageText(`Загрузка...`);
-      const levels_ = await db.query("SELECT * FROM level_tasks");
-      const newLev =
-        (levels_.rows
-          .sort((a, b) => a.level - b.level)
-          .filter((el) => el.is_open)[0]?.level || 0) + 1;
-      // if (levels_.rows.filter(el => el.))
-      await db.query("UPDATE level_tasks SET is_open = $1 WHERE level <= $2", [
-        true,
-        newLev,
-      ]);
+      const settings__ = await db.query("SELECT * FROM settings");
+      const newLev = settings__.rows[0].level + 1;
+      await db.query("UPDATE settings SET level = $1 WHERE id = 1", [newLev]);
       const usersRows = await db.query(
         "SELECT * FROM users WHERE role = 'student'"
       );
       for (const item of usersRows.rows) {
-        await bot.api.sendMessage(item.id, `🎉 Открыт уровень ${newLev}!`);
+        await bot.api.sendMessage(
+          item.id,
+          `🎉 Открыт <b><u>уровень ${newLev}</u></b>!`,
+          {
+            parse_mode: "HTML",
+          }
+        );
       }
-      await ctx.editMessageText(`🎉 Открыт уровень ${newLev}!`, {
+      await ctx.editMessageText(`🎉 Открыт <b><u>уровень ${newLev}</u></b>!`, {
+        parse_mode: "HTML",
         reply_markup: IKOpenMenu,
       });
       break;
@@ -562,6 +731,17 @@ bot.on("callback_query:data", async (ctx) => {
     //
     // SUPERADMIN
     //
+    case "leaveAdmin":
+      await db.query("UPDATE users SET role = $1 WHERE id = $2", [
+        "student",
+        ctx.from.id,
+      ]);
+      await ctx.editMessageText("Спасибо за вашу помощь! 🫶🏻");
+      await ctx.reply("📃 <b><u>Меню</u></b>", {
+        reply_markup: IKUserMenu,
+        parse_mode: "HTML",
+      });
+      break;
     case "removeTaskMenu":
       await ctx.editMessageText(
         "Выберите уровень, на котором хотите удалить задание.",
@@ -925,9 +1105,9 @@ LIMIT 10;`);
                 ? "✅ "
                 : ""
             }Уровень 1`,
-            settings.rows[0].level < 2 ||
+            settings.rows[0].level < 1 ||
               allLevels.rows.filter(
-                (el) => el.level === 1 && el.status !== "completed"
+                (el) => el.level === 0 && el.status !== "completed"
               ).length
               ? "nothing"
               : "levelMenu_1"
@@ -947,9 +1127,9 @@ LIMIT 10;`);
                 ? "✅ "
                 : ""
             }Уровень 2`,
-            settings.rows[0].level < 3 ||
+            settings.rows[0].level < 2 ||
               allLevels.rows.filter(
-                (el) => el.level === 2 && el.status !== "completed"
+                (el) => el.level === 1 && el.status !== "completed"
               ).length
               ? "nothing"
               : "levelMenu_2"
@@ -963,11 +1143,15 @@ LIMIT 10;`);
                     (el) => el.level === 2 && el.status !== "completed"
                   ).length
                 ? "🔒 "
+                : !allLevels.rows.filter(
+                    (el) => el.level === 3 && el.status !== "completed"
+                  ).length
+                ? "✅ "
                 : ""
             }Уровень 3`,
-            settings.rows[0].level < 4 ||
+            settings.rows[0].level < 3 ||
               allLevels.rows.filter(
-                (el) => el.level === 3 && el.status !== "completed"
+                (el) => el.level === 2 && el.status !== "completed"
               ).length
               ? "nothing"
               : "levelMenu_3"
@@ -977,18 +1161,21 @@ LIMIT 10;`);
             `${
               settings.rows[0].level < 4
                 ? "🚫 "
-                : !allLevels.rows.filter(
+                : allLevels.rows.filter(
                     (el) => el.level === 3 && el.status !== "completed"
                   ).length
                 ? "🔒 "
+                : !allLevels.rows.filter(
+                    (el) => el.level === 4 && el.status !== "completed"
+                  ).length
+                ? "✅ "
                 : ""
             }Уровень 4`,
-            settings.rows[0].level < 4
+            settings.rows[0].level < 4 ||
+              allLevels.rows.filter(
+                (el) => el.level === 3 && el.status !== "completed"
+              ).length
               ? "nothing"
-              : !allLevels.rows.filter(
-                  (el) => el.level === 0 && el.status !== "completed"
-                ).length
-              ? "🔒 "
               : "levelMenu_4"
           )
           .row()
@@ -1003,11 +1190,6 @@ LIMIT 10;`);
           [ctx.from.id, id]
         )
       ).rows;
-      console.log(
-        `SELECT * FROM level_tasks WHERE id in (${levelTasks
-          .map((_, index) => `$${index + 1}`)
-          .join(", ")})`
-      );
       const tasks = (
         await db.query(
           `SELECT * FROM level_tasks WHERE id in (${levelTasks
@@ -1018,39 +1200,76 @@ LIMIT 10;`);
       ).rows;
       const tasksKeyboard = new InlineKeyboard();
 
-      const tasksKeyboardEmoji = {
-        "not completed": "⭕️",
-        completed: "✅",
-        checking: "🔘",
-      };
-
-      const tasksKeyboardName = {
-        photo: "Фото-задание",
-        friend: "Дружеское задание",
-        basic: "Задание",
-      };
-
       tasks.forEach((item, index) => {
-        tasksKeyboard
-          .text(
-            `${
-              tasksKeyboardEmoji[
-                (levelTasks.find((el) => el.task_id === item.id)?.status ||
-                  "not completed") as keyof typeof tasksKeyboardEmoji
-              ]
-            } ${
-              tasksKeyboardName[
-                item.task_type as keyof typeof tasksKeyboardName
-              ]
-            } ${index + 1}`,
-            `task_${item.id}`
-          )
-          .row();
+        const levelItem = levelTasks.find((el) => el.task_id === item.id);
+        if (levelItem)
+          tasksKeyboard
+            .text(
+              `${
+                tasksKeyboardEmoji[
+                  levelItem.status as keyof typeof tasksKeyboardEmoji
+                ]
+              } ${
+                tasksKeyboardName[
+                  item.task_type as keyof typeof tasksKeyboardName
+                ]
+              } ${index + 1}`,
+              levelItem.status !== "not completed"
+                ? "nothing"
+                : `task_${levelItem.id}`
+            )
+            .row();
       });
       tasksKeyboard.text("< Назад", "levels");
-      await ctx.editMessageText("Уровень 1", {
-        reply_markup: tasksKeyboard,
-      });
+      await ctx.editMessageText(
+        id === "0" ? "Пробный уровень" : `Уровень ${id}`,
+        {
+          reply_markup: tasksKeyboard,
+        }
+      );
+      break;
+    case "task":
+      const taskLevel = (
+        await db.query("SELECT * FROM tasks_status WHERE id = $1", [id])
+      ).rows[0];
+      const task = (
+        await db.query("SELECT * FROM level_tasks WHERE id = $1", [
+          taskLevel.task_id,
+        ])
+      ).rows[0];
+      await ctx.editMessageText(
+        `${taskTypeText[task.task_type as keyof typeof taskTypeText]}
+
+✏️ Задание: ${task.task}
+${
+  task.description
+    ? `
+📑 Описание: ${task.description}`
+    : ""
+}`
+      );
+      if (task.photo) {
+        await ctx.replyWithPhoto(task.photo);
+      }
+      // @ts-ignore
+      ctx.session.taskId = id;
+      switch (task.task_type) {
+        case "photo":
+          // @ts-ignore
+          await ctx.conversation.enter("getPhotoAnswer");
+          break;
+        case "basic":
+          // @ts-ignore
+          await ctx.conversation.enter("getTextAnswer");
+          break;
+        case "friend":
+          // @ts-ignore
+          await ctx.conversation.enter("getFriendAnswer");
+          break;
+        default:
+          break;
+      }
+
     default:
       break;
   }
@@ -1096,12 +1315,7 @@ bot.start({
   course INT,
   role VARCHAR(15),
   friendship_id INT,
-  points INT,
-  tasks_0 INT[],
-  tasks_1 INT[],
-  tasks_2 INT[],
-  tasks_3 INT[],
-  tasks_4 INT[]
+  points INT
 )`);
     }
     try {
@@ -1113,9 +1327,10 @@ bot.start({
   user_id INT,
   status VARCHAR(15),
   friendship_id INT,
-  level INT
+  level INT,
+  user_answer_photo VARCHAR(100),
+  user_answer_text VARCHAR(5000)
 )`);
-      // status upper is 'completed' | 'checking' | 'not completed'
     }
     try {
       await db.query("SELECT * FROM level_tasks");
@@ -1146,10 +1361,8 @@ bot.start({
       await db.query("SELECT * FROM tasks");
     } catch (e) {
       await db.query(`CREATE TABLE tasks (
-  ID SERIAL PRIMARY KEY,
-  from_user INT,
-  level_task_id INT,
-  status VARCHAR(100),
+  id SERIAL PRIMARY KEY,
+  tasks_status_id INT,
   checked_by INT
 )`);
     }
@@ -1159,6 +1372,15 @@ bot.start({
       await db.query(`CREATE TABLE settings (
   ID SERIAL PRIMARY KEY,
   level INT
+  )`);
+    }
+    try {
+      await db.query("SELECT * FROM team_names");
+    } catch (e) {
+      await db.query(`CREATE TABLE team_names (
+  ID SERIAL PRIMARY KEY,
+  name VARCHAR(50),
+  is_busy BOOLEAN
   )`);
     }
   },

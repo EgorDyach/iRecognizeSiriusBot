@@ -89,3 +89,21 @@
 14.11.2024 02:40:30: error: bind message supplies 1 parameters, but prepared statement "" requires 5
 
 14.11.2024 02:55:24: GrammyError: Call to 'editMessageText' failed! (400: Bad Request: message is not modified: specified new message content and reply markup are exactly the same as a current content and reply markup of the message)
+
+14.11.2024 03:03:13: GrammyError: Call to 'editMessageText' failed! (400: Bad Request: message is not modified: specified new message content and reply markup are exactly the same as a current content and reply markup of the message)
+
+14.11.2024 03:22:26: error: column "tasks_0" of relation "users" does not exist
+
+14.11.2024 05:17:56: error: relation "tasks_level" does not exist
+
+14.11.2024 05:19:53: error: invalid input syntax for type boolean: "hello world"
+
+14.11.2024 05:23:28: error: invalid input syntax for type boolean: "hello_world"
+
+14.11.2024 05:25:19: error: invalid input syntax for type boolean: "test"
+
+14.11.2024 05:27:58: error: invalid input syntax for type boolean: "test"
+
+14.11.2024 05:32:03: error: invalid input syntax for type boolean: "test"
+
+14.11.2024 05:33:44: error: invalid input syntax for type boolean: "test"
