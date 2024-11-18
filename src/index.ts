@@ -10,6 +10,7 @@ import {
   InlineKeyboard,
   Context,
   Middleware,
+  InputMediaBuilder,
 } from "grammy";
 import {
   Conversation,
@@ -117,6 +118,17 @@ const IKAdminMenu = new InlineKeyboard()
   .text("Выйти из админов", "leaveAdmin");
 
 const IKUserMenu = new InlineKeyboard()
+  .text("🔢 Уровни", "levels")
+  .row()
+  .text("👀 Рейтинг", "rating")
+  .row()
+  .text("📋 Правила", "rules")
+  .row()
+  .text("📞 Контакты", "contacts");
+
+const IKUserFriendshipMenu = new InlineKeyboard()
+  .text("🫂 Моя команда", "myFriendship")
+  .row()
   .text("🔢 Уровни", "levels")
   .row()
   .text("👀 Рейтинг", "rating")
@@ -399,7 +411,6 @@ async function greeting(conversation: MyConversation, ctx: MyContext) {
     ...levels3friend,
     ...levels4basic,
   ];
-  console.log(values);
   await db.query(
     format(
       "INSERT INTO tasks_status (task_id, user_id, status, level, friendship_id) VALUES %L",
@@ -407,11 +418,23 @@ async function greeting(conversation: MyConversation, ctx: MyContext) {
     )
   );
 
-  await ctx.reply("Приятно познакомиться!");
-  await ctx.reply("📃 <b><u>Меню</u></b>", {
-    reply_markup: IKUserMenu,
-    parse_mode: "HTML",
-  });
+  await ctx.reply(`Привет!
+Мы рады видеть тебя в числе участников флешмоба «Я узнаю Сириус». Уверены, что задания покажутся простыми. И тебе не составит труда выполнить их одним из первых.`);
+  await ctx.reply(`Расскажем о правилах.
+С 16 ноября по 9 декабря ты будешь регулярно получать задания. Каждый новый этап открывается постепенно. Выполнять задания внутри этапа можно в течение всей недели. Если ты не можешь решить предлагаемую задачу, ее можно пропустить, но это скажется на количестве заработанных баллов.
+Последний, решающий этап, откроется 8 декабря, и он станет очным. Не планируй ничего на этот день.
+9 декабря будут опубликованы результаты и названы имена лидеров.
+Об ограничениях: использовать программы и приложения для фотомонтажа недопустимо, за это участник будет дисквалифицирован.
+Желаем удачи!`);
+  await ctx.reply(
+    `Ниже можешь попробовать пройти пробный уровень, посмотреть свой рейтинг, ознакомиться с правилами подробнее или связаться с нами! 👇
+    
+    📃 <b><u>Меню</u></b>`,
+    {
+      reply_markup: IKUserMenu,
+      parse_mode: "HTML",
+    }
+  );
 }
 const getTextAnswer = async (conversation: MyConversation, ctx: MyContext) => {
   await ctx.reply(
@@ -452,7 +475,7 @@ const getPhotoAnswer = async (conversation: MyConversation, ctx: MyContext) => {
       await ctx.reply("Необходимо прислать фото-селфи с нужным ответом."),
   });
   await db.query(
-    "UPDATE tasks_status SET user_answer_photo = $1, user_answer_text = $2 AND status = $3 WHERE id = $4",
+    "UPDATE tasks_status SET user_answer_photo = $1, user_answer_text = $2, status = $3 WHERE id = $4",
     [
       photoRes.message?.photo.at(-1)?.file_id || null,
       photoRes.message?.caption || null,
@@ -477,7 +500,8 @@ const getFriendAnswer = async (
 ) => {
   const myKeyboard = new Keyboard()
     .text("Создать команду")
-    .text("Присоединиться");
+    .text("Присоединиться")
+    .resized();
   await ctx.reply(
     "Для выполнения задания необходимо создать свою команду или присоединиться к кому-то.",
     { reply_markup: myKeyboard }
@@ -489,7 +513,7 @@ const getFriendAnswer = async (
       ),
   });
   let text = res.message?.text;
-  while (text !== "Создать команду" && text !== "Присоедниться") {
+  while (text !== "Создать команду" && text !== "Присоединиться") {
     await ctx.reply(
       "Необходимо выбрать 'Создать команду' или 'Присоединиться'."
     );
@@ -501,10 +525,13 @@ const getFriendAnswer = async (
     });
     text = res.message?.text;
   }
-  if (text === "Присоедниться") {
-    const myKeyboard = new Keyboard().text("Создать команду").text("В меню");
+  if (text === "Присоединиться") {
+    const myKeyboard = new Keyboard()
+      .text("Создать команду")
+      .text("В меню")
+      .resized();
     await ctx.reply(
-      "Введите ник одного из участников команды в формате @example.",
+      "Введите ID команды в формате, получить его можно у одного из сокомандников.",
       {
         reply_markup: myKeyboard,
       }
@@ -512,24 +539,25 @@ const getFriendAnswer = async (
     const res = await conversation.waitFor(":text", {
       otherwise: async (ctx) =>
         await ctx.reply(
-          "Необходимо ввести ник одного из участников команды в формате @example.",
+          "Введите ID команды в формате, получить его можно у одного из сокомандников.",
           {
             reply_markup: myKeyboard,
           }
         ),
     });
-    let nick = res.message?.text;
+    let id = res.message?.text;
+    if (id === "В меню") {
+      await setMenu(ctx);
+      return;
+    }
     let friendShipRes = await db.query(
-      "SELECT * FROM friendships WHERE $1 = ANY(users_nicks);",
-      [nick]
+      "SELECT * FROM friendships WHERE id = $1;",
+      [id]
     );
-    while (
-      !friendShipRes.rowCount &&
-      nick !== "Создать команду" &&
-      nick !== "В меню"
-    ) {
+
+    while (!friendShipRes.rowCount && id !== "Создать команду") {
       await ctx.reply(
-        "Не удалось найти такую команду. Убедитесь в правильности ника.",
+        "Не удалось найти такую команду. Убедитесь в правильности ID и введите заново ID.",
         {
           reply_markup: myKeyboard,
         }
@@ -537,42 +565,136 @@ const getFriendAnswer = async (
       const res = await conversation.waitFor(":text", {
         otherwise: async (ctx) =>
           await ctx.reply(
-            "Необходимо ввести ник одного из участников команды в формате @example.",
+            "Введите ID команды в формате, получить его можно у одного из сокомандников.",
             {
               reply_markup: myKeyboard,
             }
           ),
       });
-      nick = res.message?.text;
+      id = res.message?.text;
       friendShipRes = await db.query(
-        "SELECT * FROM friendships WHERE $1 = ANY(users_nicks);",
-        [nick]
+        "SELECT * FROM friendships WHERE id = $1;",
+        [id]
       );
-    }
-    if (nick === "В меню") {
-      await setMenu(ctx);
-      return;
     }
     if (friendShipRes.rowCount) {
       const user = await db.query("SELECT * FROM users WHERE id = $1", [
         ctx.from?.id,
       ]);
       await db.query(
-        "UPDATE friendships SET users_nicks = $1 AND users_ids = $2 WHERE id = $3",
+        "UPDATE friendships SET users_nicks = $1, users_ids = $2 WHERE id = $3",
         [
-          [...friendShipRes.rows[0].users_nicks, user.rows[0].nick],
-          [...friendShipRes.rows[0].users_nicks, user.rows[0].id],
+          [
+            ...friendShipRes.rows[0].users_nicks,
+            user.rows[0].nick ? user.rows[0].nick : "noneNick",
+          ],
+          [...friendShipRes.rows[0].users_ids, user.rows[0].id],
           friendShipRes.rows[0].id,
         ]
       );
-      await db.query("UPDATE users SET friendship_id = $1 WHERE id = $2", [
-        friendShipRes.rows[0].id,
-        user.rows[0].id,
-      ]);
+      const t = await db.query(
+        `UPDATE users 
+SET friendship_id = $1 
+WHERE id = $2 
+RETURNING *;`,
+        [friendShipRes.rows[0].id, user.rows[0].id]
+      );
+      await ctx.reply(`Добавили вас в команду ${t.rows[0].name}.`);
+      for (const user of friendShipRes.rows[0].users_ids) {
+        await bot.api.sendMessage(
+          user,
+          `👤 В вашу команду вступил игрок${
+            ctx.from?.username ? ctx.from?.username : ""
+          }.`
+        );
+      }
+      if ([...friendShipRes.rows[0].users_ids, ctx.from?.id].length === 2) {
+        const r = await db.query(
+          "SELECT * FROM level_tasks WHERE level = 2 AND task_type=$1",
+          ["friend"]
+        );
+        for (const user of friendShipRes.rows[0].users_ids) {
+          await db.query(
+            "UPDATE tasks_status SET status = $1 WHERE user_id = $2 AND task_id = $3",
+            ["completed", user, r.rows[0].id]
+          );
+          await bot.api.sendMessage(
+            user,
+            " 🎉 Вы выполнили задание на создание команды из 2 человек!"
+          );
+        }
+      }
+      if ([...friendShipRes.rows[0].users_ids, ctx.from?.id].length === 4) {
+        const r = await db.query(
+          "SELECT * FROM level_tasks WHERE level = 3 AND task_type=$1",
+          ["friend"]
+        );
+        await db.query(
+          "UPDATE tasks_status SET status = $1 WHERE user_id = $2 AND task_id = $3",
+          ["completed", user, r.rows[0].id]
+        );
+        await ctx.reply(
+          " 🎉 Вы выполнили задание на создание команды из 4 человек!"
+        );
+      }
       return;
     }
   }
-  await ctx.reply("Окей, создали под вас команду");
+  // Select a random team name that is not busy
+  const selectedNameResult = await db.query(
+    `SELECT ID, name
+     FROM team_names
+     WHERE is_busy = FALSE
+     ORDER BY RANDOM()
+     LIMIT 1`
+  );
+
+  const selectedName = selectedNameResult.rows[0];
+
+  const user = await db.query(
+    `SELECT nick, ID
+     FROM users
+     WHERE ID = $1`,
+    [ctx.from?.id]
+  );
+
+  const newFriendshipIdResult = await db.query(
+    `SELECT COALESCE(MAX(ID), 100000) + 1 AS new_id
+     FROM friendships`
+  );
+
+  const newFriendshipId = newFriendshipIdResult.rows[0].new_id;
+
+  // Insert the new friendship
+  const insertResult = await db.query(
+    `INSERT INTO friendships (ID, users_nicks, users_ids, name)
+     VALUES ($1, $2, $3, $4)
+     RETURNING *`,
+    [newFriendshipId, [user.rows[0].nick], [user.rows[0].id], selectedName.name]
+  );
+
+  // Update the team name to set it as busy
+  await db.query(
+    `UPDATE team_names
+     SET is_busy = TRUE
+     WHERE ID = $1`,
+    [selectedName.id]
+  );
+
+  await db.query(`UPDATE users SET friendship_id  = $1 WHERE id = $2`, [
+    newFriendshipId,
+    user.rows[0].id,
+  ]);
+
+  // Return the result of the insert
+  // return insertResult.rows[0];
+  await ctx.reply(
+    `Команда создана! Название вашей команды: ${insertResult.rows[0].name}. 
+
+    Для выполнения уровня необходимо добавить сокомандника.
+
+    Для добавление ваш сокомандник должен ввести ID: ${insertResult.rows[0].id}.`
+  );
 };
 bot.use(
   session({
@@ -597,11 +719,93 @@ bot.use(createConversation(getFriendAnswer) as Middleware<Context>);
 
 // HELPERS
 
-async function isSuperAdmin(id: number) {
+const reviewTask = async (ctx: MyContext) => {
+  const unchecked = await db.query(
+    "SELECT * FROM tasks WHERE checked_by IS NULL ORDER BY id ASC LIMIT 1;"
+  );
+  if (!unchecked.rowCount) {
+    await ctx.editMessageText("Отчетов на данный момент нет!", {
+      reply_markup: new InlineKeyboard().text("В меню", "openMenu"),
+    });
+    return;
+  }
+  const task_status = await db.query(
+    "SELECT * FROM tasks_status WHERE id = $1",
+    [unchecked.rows[0].tasks_status_id]
+  );
+  const user = await db.query("SELECT * FROM users WHERE id = $1", [
+    task_status.rows[0].user_id,
+  ]);
+  const user_data = user.rows[0];
+  const task_status_data = task_status.rows[0];
+
+  const task = await db.query("SELECT * FROM level_tasks WHERE id = $1", [
+    task_status.rows[0].task_id,
+  ]);
+  const task_data = task.rows[0];
+  const photos = [
+    user_data && user_data.photo
+      ? [InputMediaBuilder.photo(user_data.photo)]
+      : [],
+    task_data && task_data.photo
+      ? [InputMediaBuilder.photo(task_data.photo)]
+      : [],
+    task_status_data && task_status_data.user_answer_photo
+      ? [InputMediaBuilder.photo(task_status_data.user_answer_photo)]
+      : [],
+  ].flat();
+
+  await ctx.replyWithMediaGroup(photos);
+  const IKReview = new InlineKeyboard()
+    .text("✅ Одобрить", `reviewAccept_${unchecked.rows[0].tasks_status_id}`)
+    .text("❌ Отклонить", `reviewDecline_${unchecked.rows[0].tasks_status_id}`)
+    .row()
+    .text("В меню", "openMenu");
+  await ctx.reply(
+    `📝 Отчет от @${user_data.nick} (${user_data.name}):
+
+1. Фото участника
+${
+  task_data.photo
+    ? `2. Фото из задания
+  `
+    : ""
+}
+${
+  task_status_data.user_answer_photo
+    ? `3. Фото из отчета участника
+  `
+    : ""
+}
+––––––––––––––––––––––
+👉🏻 Задание: ${task_data.task}${
+      task_data.description
+        ? `
+  
+📑 Описание: ${task_data.description}`
+        : ""
+    }
+
+❗️  Ответ: ${task_data.answer}
+${
+  task_status_data.user_answer_text
+    ? `––––––––––––––––––––––
+  
+💢 Текстовый ответ участника (или подпись к фото): ${task_status_data.user_answer_text}`
+    : ""
+}
+`,
+    {
+      reply_markup: IKReview,
+    }
+  );
+};
+
+async function checkFriendship(id: number) {
   try {
     const user = (await db.query(`SELECT * FROM users WHERE id = $1`, [id]))
       .rows[0];
-    if (user && user.role === "super_admin") return true;
+    if (user && user.friendship_id) return true;
   } catch (e) {
     return false;
   }
@@ -652,12 +856,16 @@ bot.command("start", async (ctx) => {
 
 const setMenu = async (ctx: Context) => {
   const isAdminRes = await isAdmin(ctx.from?.id || 0);
+  const isFriendship = await checkFriendship(ctx.from?.id || 0);
   try {
     await ctx.editMessageText(
       "📃 <b><u>Меню</u></b>",
       isAdminRes
         ? { parse_mode: "HTML", reply_markup: IKAdminMenu }
-        : { parse_mode: "HTML", reply_markup: IKUserMenu }
+        : {
+            parse_mode: "HTML",
+            reply_markup: isFriendship ? IKUserFriendshipMenu : IKUserMenu,
+          }
     );
   } catch (e) {
     console.log(e);
@@ -665,7 +873,10 @@ const setMenu = async (ctx: Context) => {
       "📃 <b><u>Меню</u></b>",
       isAdminRes
         ? { parse_mode: "HTML", reply_markup: IKAdminMenu }
-        : { parse_mode: "HTML", reply_markup: IKUserMenu }
+        : {
+            parse_mode: "HTML",
+            reply_markup: isFriendship ? IKUserFriendshipMenu : IKUserMenu,
+          }
     );
   }
 };
@@ -681,6 +892,34 @@ bot.on("callback_query:data", async (ctx) => {
       await setMenu(ctx);
       break;
 
+    case "myFriendship":
+      const user = await db.query("SELECT * FROM users WHERE id = $1", [
+        ctx.from.id,
+      ]);
+      const friendship = await db.query(
+        "SELECT * FROM friendships WHERE id = $1",
+        [user.rows[0].friendship_id]
+      );
+      const friends = [];
+      for (const f of friendship.rows[0].users_ids) {
+        const friend = await db.query("SELECT * FROM users WHERE id = $1", [f]);
+        friends.push(friend.rows[0]);
+      }
+      await ctx.editMessageText(
+        `<b><u>Моя команда</u></b>
+
+${friends
+  .map(
+    (item, index) =>
+      `${index + 1}. ${item.name} - ${item.nick ? `@${item.nick}` : "Без ника"}`
+  )
+  .join("\n")}`,
+        {
+          parse_mode: "HTML",
+          reply_markup: new InlineKeyboard().text("< Назад", "openMenu"),
+        }
+      );
+      break;
     case "unlockLevelMenu":
       const settings_ = await db.query("SELECT * FROM settings");
       const curLev = settings_.rows[0].level;
@@ -731,6 +970,8 @@ bot.on("callback_query:data", async (ctx) => {
     //
     // SUPERADMIN
     //
+    case "reviewTasks":
+      return reviewTask(ctx as MyContext);
     case "leaveAdmin":
       await db.query("UPDATE users SET role = $1 WHERE id = $2", [
         "student",
@@ -855,10 +1096,55 @@ bot.on("callback_query:data", async (ctx) => {
           newKeyboard.row();
         }
       });
-      await ctx.editMessageText("Выберите задание, которое хотите удалить.", {
-        reply_markup: viewInlineKeyboard,
-      });
+      await ctx.editMessageText(
+        "Выберите задание, которое хотите просмотреть.",
+        {
+          reply_markup: viewInlineKeyboard,
+        }
+      );
       break;
+    case "viewTask":
+      if (id === "cancel") {
+        await setMenu(ctx);
+        return;
+      }
+      const viewItemInlineKeyboard = new InlineKeyboard()
+        .text("< Назад", "viewTask_cancel")
+        .row();
+      const task_ = await db.query("SELECT * FROM level_tasks WHERE id = $1", [
+        id,
+      ]);
+      if (task_.rows[0].photo)
+        await ctx.replyWithPhoto(task_.rows[0].photo, {
+          caption: `${
+            taskTypeText[task_.rows[0].task_type as keyof typeof taskTypeText]
+          }
+
+✏️ Задание: ${task_.rows[0].task}
+${
+  task_.rows[0].task_description
+    ? `
+📑 Описание: ${task_.rows[0].task_description}`
+    : ""
+}
+❗️ Ответ: ${task_.rows[0].answer}`,
+          reply_markup: viewItemInlineKeyboard,
+        });
+      else
+        await ctx.editMessageText(
+          `${taskTypeText[task_.rows[0].task_type as keyof typeof taskTypeText]}
+
+✏️ Задание: ${task_.rows[0].task}
+${
+  task_.rows[0].task_description
+    ? `
+📑 Описание: ${task_.rows[0].task_description}`
+    : ""
+}
+
+❗️ Ответ: ${task_.rows[0].answer}`,
+          { reply_markup: viewItemInlineKeyboard }
+        );
       break;
     case "addTaskMenu":
       await ctx.editMessageText(
@@ -869,8 +1155,6 @@ bot.on("callback_query:data", async (ctx) => {
       );
       break;
 
-    case "viewTask":
-      break;
     case "addTaskLevel":
       if (id === "cancel") {
         await setMenu(ctx);
@@ -879,7 +1163,7 @@ bot.on("callback_query:data", async (ctx) => {
       // @ts-ignore
       ctx.session.addingTaskLevel = id;
       const inlineKeyboardAdd = new InlineKeyboard()
-        .text("<br Назад", "addTask_back")
+        .text("< Назад", "addTask_back")
         .row()
         .text("📸 Фото-задание", "addTask_photo")
         .row()
@@ -1242,9 +1526,9 @@ LIMIT 10;`);
 
 ✏️ Задание: ${task.task}
 ${
-  task.description
+  task.task_description
     ? `
-📑 Описание: ${task.description}`
+📑 Описание: ${task.task_description}`
     : ""
 }`
       );
@@ -1269,7 +1553,76 @@ ${
         default:
           break;
       }
-
+      break;
+    case "reviewAccept":
+      await db.query(
+        "UPDATE tasks SET checked_by = $1 WHERE tasks_status_id = $2",
+        [ctx.from.id, id]
+      );
+      const status_task = await db.query(
+        "SELECT * FROM tasks_status WHERE id = $1",
+        [id]
+      );
+      await db.query("UPDATE tasks_status SET status = $1 WHERE id = $2", [
+        "completed",
+        id,
+      ]);
+      try {
+        const friendshipTeam = await db.query(
+          `SELECT * FROM friendships WHERE $1 in (users_ids)`,
+          [id]
+        );
+        const friendshipTeam_ = await db.query(
+          `SELECT * FROM friendships WHERE $1 in users_ids`,
+          [id]
+        );
+        console.log(friendshipTeam, friendshipTeam_);
+        for (const fr of friendshipTeam.rows[0].users_ids) {
+          await db.query(
+            "UPDATE users SET points = points + $1 WHERE id = $2",
+            [
+              status_task.rows[0].task_type === "photo"
+                ? 5
+                : status_task.rows[0].task_type === "friend"
+                ? 3
+                : 1,
+              fr,
+            ]
+          );
+          await bot.api.sendMessage(fr, `🤝 Ваш сокомандник выполнил задание!`);
+        }
+      } catch {}
+      await db.query("UPDATE users SET points = points + $1 WHERE id = $2", [
+        status_task.rows[0].task_type === "photo"
+          ? 5
+          : status_task.rows[0].task_type === "friend"
+          ? 3
+          : 1,
+        status_task.rows[0].user_id,
+      ]);
+      await bot.api.sendMessage(
+        status_task.rows[0].user_id,
+        "Ваше задание принято, обновите меню! 🎉"
+      );
+      return reviewTask(ctx as MyContext);
+    case "reviewDecline":
+      await db.query(
+        "UPDATE tasks SET checked_by = $1 WHERE tasks_status_id = $2",
+        [ctx.from.id, id]
+      );
+      const _status_task = await db.query(
+        "SELECT * FROM tasks_status WHERE id = $1",
+        [id]
+      );
+      await db.query("UPDATE tasks_status SET status = $1 WHERE id = $2", [
+        "not completed",
+        id,
+      ]);
+      await bot.api.sendMessage(
+        _status_task.rows[0].user_id,
+        "Ваше задание не принято, не расстраивайтесь, ждем вашу новую попытку!"
+      );
+      return reviewTask(ctx as MyContext);
     default:
       break;
   }
@@ -1307,7 +1660,7 @@ bot.start({
       await db.query("SELECT * FROM users");
     } catch (e) {
       await db.query(`CREATE TABLE users (
-  ID SERIAL PRIMARY KEY,
+  ID BIGINT SERIAL PRIMARY KEY,
   nick VARCHAR(100),
   name VARCHAR(100),
   photo VARCHAR(100),
@@ -1324,7 +1677,7 @@ bot.start({
       await db.query(`CREATE TABLE tasks_status (
   ID SERIAL PRIMARY KEY,
   task_id INT,
-  user_id INT,
+  user_id BIGINT,
   status VARCHAR(15),
   friendship_id INT,
   level INT,
@@ -1353,8 +1706,8 @@ bot.start({
       await db.query(`CREATE TABLE friendships (
   ID SERIAL PRIMARY KEY,
   users_nicks VARCHAR(100)[],
-  users_ids INT[],
-  waiting_ids INT[]
+  users_ids BIGINT[],
+  name VARCHAR(100)
 )`);
     }
     try {
@@ -1363,7 +1716,7 @@ bot.start({
       await db.query(`CREATE TABLE tasks (
   id SERIAL PRIMARY KEY,
   tasks_status_id INT,
-  checked_by INT
+  checked_by BIGINT
 )`);
     }
     try {

@@ -107,3 +107,133 @@
 14.11.2024 05:32:03: error: invalid input syntax for type boolean: "test"
 
 14.11.2024 05:33:44: error: invalid input syntax for type boolean: "test"
+
+14.11.2024 06:27:49: GrammyError: Call to 'sendMediaGroup' failed! (400: Bad Request: can't parse InputMedia: media not found)
+
+14.11.2024 06:28:51: GrammyError: Call to 'sendPhoto' failed! (400: Bad Request: there is no photo in the request)
+
+14.11.2024 06:32:46: TypeError: Cannot read properties of undefined (reading 'id')
+
+14.11.2024 06:34:01: TypeError: Cannot read properties of undefined (reading 'tasks_status_id')
+
+14.11.2024 06:34:41: TypeError: Cannot read properties of undefined (reading 'tasks_status_id')
+
+14.11.2024 06:35:02: TypeError: Cannot read properties of undefined (reading 'tasks_status_id')
+
+14.11.2024 07:06:40: error: column "tasks_status_id" does not exist
+
+14.11.2024 07:08:21: error: column "tasks_status_id" does not exist
+
+14.11.2024 07:11:40: error: invalid input syntax for type boolean: "это ч"
+
+14.11.2024 07:18:34: error: syntax error at or near "status"
+
+14.11.2024 07:37:08: GrammyError: Call to 'editMessageText' failed! (400: Bad Request: message text is empty)
+
+14.11.2024 07:37:16: GrammyError: Call to 'editMessageText' failed! (400: Bad Request: message text is empty)
+
+14.11.2024 07:42:15: error: invalid input syntax for type integer: "NaN"
+
+14.11.2024 07:42:38: GrammyError: Call to 'editMessageText' failed! (400: Bad Request: message is not modified: specified new message content and reply markup are exactly the same as a current content and reply markup of the message)
+
+14.11.2024 07:42:48: GrammyError: Call to 'editMessageText' failed! (400: Bad Request: message is not modified: specified new message content and reply markup are exactly the same as a current content and reply markup of the message)
+
+14.11.2024 07:44:18: GrammyError: Call to 'editMessageText' failed! (400: Bad Request: message is not modified: specified new message content and reply markup are exactly the same as a current content and reply markup of the message)
+
+14.11.2024 15:07:27: error: syntax error at or near ")"
+
+14.11.2024 15:07:29: error: syntax error at or near ")"
+
+14.11.2024 15:07:34: TypeError: Cannot read properties of undefined (reading 'points')
+
+14.11.2024 15:07:35: TypeError: Cannot read properties of undefined (reading 'points')
+
+14.11.2024 15:07:36: TypeError: Cannot read properties of undefined (reading 'points')
+
+14.11.2024 15:07:38: TypeError: Cannot read properties of undefined (reading 'points')
+
+14.11.2024 15:07:39: TypeError: Cannot read properties of undefined (reading 'points')
+
+14.11.2024 15:27:17: GrammyError: Call to 'editMessageText' failed! (400: Bad Request: message is not modified: specified new message content and reply markup are exactly the same as a current content and reply markup of the message)
+
+14.11.2024 15:32:33: GrammyError: Call to 'sendMediaGroup' failed! (400: Bad Request: there are no messages to send)
+
+14.11.2024 15:32:43: GrammyError: Call to 'sendMediaGroup' failed! (400: Bad Request: there are no messages to send)
+
+14.11.2024 15:33:03: GrammyError: Call to 'sendMediaGroup' failed! (400: Bad Request: there are no messages to send)
+
+14.11.2024 15:33:12: GrammyError: Call to 'sendMediaGroup' failed! (400: Bad Request: there are no messages to send)
+
+14.11.2024 15:33:13: GrammyError: Call to 'sendMediaGroup' failed! (400: Bad Request: there are no messages to send)
+
+14.11.2024 15:33:13: GrammyError: Call to 'sendMediaGroup' failed! (400: Bad Request: there are no messages to send)
+
+14.11.2024 15:33:19: GrammyError: Call to 'sendMediaGroup' failed! (400: Bad Request: there are no messages to send)
+
+14.11.2024 15:33:20: GrammyError: Call to 'sendMediaGroup' failed! (400: Bad Request: there are no messages to send)
+
+14.11.2024 15:33:20: GrammyError: Call to 'sendMediaGroup' failed! (400: Bad Request: there are no messages to send)
+
+14.11.2024 15:33:21: GrammyError: Call to 'sendMediaGroup' failed! (400: Bad Request: there are no messages to send)
+
+14.11.2024 15:33:21: GrammyError: Call to 'sendMediaGroup' failed! (400: Bad Request: there are no messages to send)
+
+14.11.2024 15:33:24: GrammyError: Call to 'sendMediaGroup' failed! (400: Bad Request: there are no messages to send)
+
+14.11.2024 15:33:25: GrammyError: Call to 'sendMediaGroup' failed! (400: Bad Request: there are no messages to send)
+
+14.11.2024 15:33:25: GrammyError: Call to 'sendMediaGroup' failed! (400: Bad Request: there are no messages to send)
+
+14.11.2024 15:33:26: GrammyError: Call to 'sendMediaGroup' failed! (400: Bad Request: there are no messages to send)
+
+14.11.2024 15:33:26: GrammyError: Call to 'sendMediaGroup' failed! (400: Bad Request: there are no messages to send)
+
+14.11.2024 15:33:30: GrammyError: Call to 'sendMediaGroup' failed! (400: Bad Request: there are no messages to send)
+
+14.11.2024 15:33:31: GrammyError: Call to 'sendMediaGroup' failed! (400: Bad Request: there are no messages to send)
+
+14.11.2024 15:33:36: GrammyError: Call to 'sendMediaGroup' failed! (400: Bad Request: there are no messages to send)
+
+14.11.2024 15:33:44: GrammyError: Call to 'sendMediaGroup' failed! (400: Bad Request: there are no messages to send)
+
+14.11.2024 15:34:03: GrammyError: Call to 'sendMediaGroup' failed! (400: Bad Request: there are no messages to send)
+
+14.11.2024 15:34:50: TypeError: Cannot read properties of undefined (reading 'photo')
+
+18.11.2024 10:01:24: error: cannot insert multiple commands into a prepared statement
+
+18.11.2024 10:09:40: error: invalid input syntax for type integer: "{"869361990"}"
+
+18.11.2024 10:15:55: error: value "5719563385" is out of range for type integer
+
+18.11.2024 10:19:21: error: value "5719563385" is out of range for type integer
+
+18.11.2024 10:28:57: error: column "users_nicks" is of type character varying[] but expression is of type boolean
+
+18.11.2024 10:59:17: TypeError: Cannot read properties of undefined (reading 'photo')
+
+18.11.2024 10:59:20: TypeError: Cannot read properties of undefined (reading 'photo')
+
+18.11.2024 11:00:06: GrammyError: Call to 'sendMediaGroup' failed! (400: Bad Request: there are no messages to send)
+
+18.11.2024 11:00:55: GrammyError: Call to 'sendMediaGroup' failed! (400: Bad Request: there are no messages to send)
+
+18.11.2024 11:04:14: GrammyError: Call to 'sendMediaGroup' failed! (400: Bad Request: there are no messages to send)
+
+18.11.2024 11:04:27: GrammyError: Call to 'sendMediaGroup' failed! (400: Bad Request: there are no messages to send)
+
+18.11.2024 11:04:33: GrammyError: Call to 'sendMediaGroup' failed! (400: Bad Request: there are no messages to send)
+
+18.11.2024 11:04:37: GrammyError: Call to 'sendMediaGroup' failed! (400: Bad Request: there are no messages to send)
+
+18.11.2024 11:05:09: GrammyError: Call to 'sendMediaGroup' failed! (400: Bad Request: there are no messages to send)
+
+18.11.2024 11:11:30: error: invalid input syntax for type integer: "В меню"
+
+18.11.2024 11:13:10: error: column "users_nicks" is of type character varying[] but expression is of type boolean
+
+18.11.2024 11:13:58: error: column "users_nicks" is of type character varying[] but expression is of type boolean
+
+18.11.2024 11:15:21: error: column "users_nicks" is of type character varying[] but expression is of type boolean
+
+18.11.2024 11:16:37: error: invalid input syntax for type bigint: "egor_dyachenko"
