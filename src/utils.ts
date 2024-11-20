@@ -6,7 +6,7 @@ import {
   IKUserMenu,
   IKUserFriendshipMenu,
 } from "./keyboards";
-import { MyConversation, MyContext, bot } from "./constants";
+import { MyConversation, MyContext, bot, taskTypeText } from "./constants";
 import { isAdmin, checkFriendship } from "./helpers";
 import { SELECT_USER } from "./sqlQueries";
 
@@ -115,8 +115,13 @@ export async function createNewTask(
 
   if (photo) {
     await ctx.replyWithPhoto(photo[photo.length - 1].file_id, {
-      // @ts-ignore
-      caption: `🔢 Уровень: ${ctx.session.addingTaskLevel}
+      caption: `🔢 Уровень: ${
+        // @ts-ignore
+        ctx.session.addingTaskLevel === 5
+          ? "Финал"
+          : // @ts-ignore
+            ctx.session.addingTaskLevel
+      }
 Тип: ${(() => {
         // @ts-ignore
         return taskTypeText[ctx.session.addingTaskType];
@@ -132,8 +137,13 @@ ${
     });
   } else {
     await ctx.reply(
-      // @ts-ignore
-      `🔢 Уровень: ${ctx.session.addingTaskLevel}
+      `🔢 Уровень: ${
+        // @ts-ignore
+        ctx.session.addingTaskLevel === 5
+          ? "Финал"
+          : // @ts-ignore
+            ctx.session.addingTaskLevel
+      }
 Тип: ${(() => {
         // @ts-ignore
         return taskTypeText[ctx.session.addingTaskType];
@@ -222,6 +232,10 @@ export async function greeting(conversation: MyConversation, ctx: MyContext) {
 
   await db.query("UPDATE users SET photo = $1 WHERE id = $2", [
     photo.message?.photo[photo.message?.photo.length - 1].file_id,
+    ctx.from?.id,
+  ]);
+  await db.query("UPDATE users SET role = $1 WHERE id = $2", [
+    "student_is_checking",
     ctx.from?.id,
   ]);
   await ctx.reply(
@@ -496,6 +510,10 @@ RETURNING *;`,
 export const setMenu = async (ctx: Context) => {
   const user = (await db.query(SELECT_USER, [ctx.from?.id])).rows[0];
   if (user.role === "student_not_checked") {
+    await ctx.reply("Необходимо пройти регистрацию!");
+    return;
+  }
+  if (user.role === "student_is_checking") {
     await ctx.reply("Необходимо дождаться проверки!");
     return;
   }

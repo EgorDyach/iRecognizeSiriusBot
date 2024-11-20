@@ -245,3 +245,31 @@
 19.11.2024 13:55:42: TypeError: Cannot read properties of undefined (reading 'user_id')
 
 19.11.2024 20:09:26: error: value too long for type character varying(15)
+
+20.11.2024 09:45:59: GrammyError: Call to 'editMessageText' failed! (400: Bad Request: there is no text in the message to edit)
+
+20.11.2024 09:57:48: GrammyError: Call to 'editMessageText' failed! (400: Bad Request: there is no text in the message to edit)
+
+20.11.2024 10:05:38: GrammyError: Call to 'answerCallbackQuery' failed! (400: Bad Request: query is too old and response timeout expired or query ID is invalid)
+
+20.11.2024 10:06:29: GrammyError: Call to 'editMessageText' failed! (400: Bad Request: there is no text in the message to edit)
+
+20.11.2024 10:09:17: GrammyError: Call to 'editMessageText' failed! (400: Bad Request: there is no text in the message to edit)
+
+20.11.2024 10:11:58: GrammyError: Call to 'editMessageText' failed! (400: Bad Request: there is no text in the message to edit)
+
+20.11.2024 10:14:34: TypeError: Cannot read properties of undefined (reading 'role')
+
+20.11.2024 10:16:52: error: syntax error at or near ")"
+
+20.11.2024 10:16:54: error: syntax error at or near ")"
+
+20.11.2024 10:19:13: error: syntax error at or near ")"
+
+20.11.2024 10:19:46: error: syntax error at or near ")"
+
+20.11.2024 10:30:44: ReferenceError: taskTypeText is not defined
+
+20.11.2024 13:24:13: GrammyError: Call to 'editMessageText' failed! (400: Bad Request: message is not modified: specified new message content and reply markup are exactly the same as a current content and reply markup of the message)
+
+20.11.2024 15:33:41: TypeError: Cannot read properties of undefined (reading 'level')

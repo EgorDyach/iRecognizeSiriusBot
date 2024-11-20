@@ -2,43 +2,49 @@ import { InlineKeyboard } from "grammy";
 
 export const IKViewLevel = new InlineKeyboard()
   .text("< Назад", "viewLevel_cancel")
+  .row()
   .text("test level", "viewLevel_0")
   .text("level 1", "viewLevel_1")
-  .row()
   .text("level 2", "viewLevel_2")
+  .row()
   .text("level 3", "viewLevel_3")
-  .text("level 4", "viewLevel_4");
+  .text("level 4", "viewLevel_4")
+  .text("level final", "viewLevel_5");
 
 export const IKRemoveLevel = new InlineKeyboard()
   .text("< Назад", "removeLevel_cancel")
+  .row()
   .text("test level", "removeLevel_0")
   .text("level 1", "removeLevel_1")
-  .row()
   .text("level 2", "removeLevel_2")
+  .row()
   .text("level 3", "removeLevel_3")
-  .text("level 4", "removeLevel_4");
+  .text("level 4", "removeLevel_4")
+  .text("level final", "removeLevel_5");
 
 export const IKAddLevel = new InlineKeyboard()
   .text("< Назад", "addTaskLevel_cancel")
+  .row()
   .text("test level", "addTaskLevel_0")
   .text("level 1", "addTaskLevel_1")
-  .row()
   .text("level 2", "addTaskLevel_2")
+  .row()
   .text("level 3", "addTaskLevel_3")
-  .text("level 4", "addTaskLevel_4");
+  .text("level 4", "addTaskLevel_4")
+  .text("level final", "addTaskLevel_5");
 
 export const IKAdminMenu = new InlineKeyboard()
   .text("Просмотреть отчеты", "reviewTasks")
   .row()
   .text("Добавить задание", "addTaskMenu")
   .row()
-  .text("Просмотреть задания", "viewTaskMenu")
+  .text("Просмотреть (Удалить) задания", "viewTaskMenu")
   .row()
   .text("Разблокировать уровень", "unlockLevelMenu")
   .row()
-  .text("Удалить задание", "removeTaskMenu")
-  .row()
   .text("Выйти из админов", "leaveAdmin");
+// .text("Удалить задание", "removeTaskMenu")
+// .row()
 
 export const IKUserMenu = new InlineKeyboard()
   .text("🔢 Уровни", "levels")

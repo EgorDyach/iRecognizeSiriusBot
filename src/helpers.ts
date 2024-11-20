@@ -8,7 +8,7 @@ import { setMenu } from "./utils";
 export const reviewTask = async (ctx: MyContext) => {
   const uncheckedRegs = await db.query(
     "SELECT * FROM users WHERE role = $1 ORDER BY id ASC LIMIT 1;",
-    ["student_not_checked"]
+    ["student_is_checking"]
   );
   const uncheckedTasks = await db.query(
     "SELECT * FROM tasks WHERE checked_by IS NULL ORDER BY id ASC LIMIT 1;"
@@ -21,13 +21,10 @@ export const reviewTask = async (ctx: MyContext) => {
   }
   if (uncheckedRegs.rowCount) {
     const user = uncheckedRegs.rows[0];
-    await ctx.replyWithPhoto(user.photo, {
-      reply_markup: new InlineKeyboard()
-        .text("✅ Одобрить", `reviewRegAccept_${user.id}`)
-        .text("❌ Отклонить", `reviewRegDecline_${user.id}`)
-        .row()
-        .text("В меню", "openMenu"),
-      caption: `👤 Новый пользователь:
+
+    await ctx.replyWithMediaGroup([InputMediaBuilder.photo(user.photo)]);
+    await ctx.reply(
+      `👤 Новый пользователь:
 
 ТГ-ник: ${user.nick ? `@${user.nick}` : `Без ника`}
 
@@ -36,7 +33,14 @@ export const reviewTask = async (ctx: MyContext) => {
 Курс: ${user.course}
 
 Группа: ${user.college_group}`,
-    });
+      {
+        reply_markup: new InlineKeyboard()
+          .text("✅ Одобрить", `reviewRegAccept_${user.id}`)
+          .text("❌ Отклонить", `reviewRegDecline_${user.id}`)
+          .row()
+          .text("В меню", "openMenu"),
+      }
+    );
     return;
   }
   const task_status = await db.query(
@@ -160,6 +164,7 @@ export async function resetData(ctx: Context) {
   const levels3photo = await getLevelTasks(3, "photo", 3);
   const levels3friend = await getLevelTasks(3, "friend", 1);
   const levels4basic = await getLevelTasks(4, "basic", 3);
+  const levels5photo = await getLevelTasks(5, "photo", 5);
   const values = [
     ...levels0,
     ...levels1basic,
@@ -171,6 +176,7 @@ export async function resetData(ctx: Context) {
     ...levels3photo,
     ...levels3friend,
     ...levels4basic,
+    ...levels5photo,
   ];
   const tasks = await db.query(
     "SELECT * FROM tasks_status WHERE user_id = $1",

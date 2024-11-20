@@ -8,7 +8,7 @@ import {
   taskTypeText,
 } from "./constants";
 import { db } from "./db";
-import { isAdmin, reviewTask } from "./helpers";
+import { checkFriendship, isAdmin, reviewTask } from "./helpers";
 import {
   IKUnlockMenu,
   IKOpenMenu,
@@ -18,6 +18,7 @@ import {
   IKViewLevel,
   IKAddLevel,
   IKRules,
+  IKUserFriendshipMenu,
 } from "./keyboards";
 import { setMenu } from "./utils";
 import plural from "plural-ru";
@@ -26,6 +27,7 @@ import {
   SELECT_USER,
   SELECT_USER_STUDENT,
 } from "./sqlQueries";
+import format from "pg-format";
 
 export const callbackData = async (ctx: Context) => {
   await ctx.answerCallbackQuery();
@@ -69,7 +71,9 @@ ${friends
       const settings_ = await db.query(SELECT_SETTINGS);
       const curLev = settings_.rows[0].level;
       await ctx.editMessageText(
-        `Вы уверены, что хотите открыть уровень ${curLev + 1}?`,
+        `Вы уверены, что хотите открыть уровень ${
+          curLev + 1 === 5 ? '"Финал"' : curLev + 1
+        }?`,
         { reply_markup: IKUnlockMenu }
       );
       break;
@@ -83,16 +87,21 @@ ${friends
       for (const item of usersRows.rows) {
         await bot.api.sendMessage(
           item.id,
-          `🎉 Открыт <b><u>уровень ${newLev}</u></b>!`,
+          `🎉 Открыт <b><u>уровень ${
+            newLev === 5 ? '"Финал"' : newLev
+          }</u></b>!`,
           {
             parse_mode: "HTML",
           }
         );
       }
-      await ctx.editMessageText(`🎉 Открыт <b><u>уровень ${newLev}</u></b>!`, {
-        parse_mode: "HTML",
-        reply_markup: IKOpenMenu,
-      });
+      await ctx.editMessageText(
+        `🎉 Открыт <b><u>уровень ${newLev === 5 ? '"Финал"' : newLev}</u></b>!`,
+        {
+          parse_mode: "HTML",
+          reply_markup: IKOpenMenu,
+        }
+      );
       break;
 
     case "cancelAddingTask":
@@ -237,9 +246,11 @@ ${friends
         await setMenu(ctx);
         return;
       }
+
       const viewItemInlineKeyboard = new InlineKeyboard()
         .text("< Назад", "viewTask_cancel")
-        .row();
+        .row()
+        .text("🗑️ Удалить", `removeTask_${id}`);
       const task_ = await db.query("SELECT * FROM level_tasks WHERE id = $1", [
         id,
       ]);
@@ -591,6 +602,28 @@ LIMIT 10;`);
               : "levelMenu_4"
           )
           .row()
+          .text(
+            `${
+              settings.rows[0].level < 5
+                ? "🚫 "
+                : allLevels.rows.filter(
+                    (el) => el.level === 4 && el.status !== "completed"
+                  ).length
+                ? "🔒 "
+                : !allLevels.rows.filter(
+                    (el) => el.level === 4 && el.status !== "completed"
+                  ).length
+                ? "✅ "
+                : ""
+            }Финал`,
+            settings.rows[0].level < 5 ||
+              allLevels.rows.filter(
+                (el) => el.level === 4 && el.status !== "completed"
+              ).length
+              ? "nothing"
+              : "levelMenu_5"
+          )
+          .row()
           .text("В меню", "openMenu"),
         parse_mode: "HTML",
       });
@@ -751,12 +784,66 @@ ${
         "Ваше задание не принято, не расстраивайтесь, ждем вашу новую попытку!"
       );
       return reviewTask(ctx as MyContext);
+
     case "reviewRegAccept":
       await db.query("UPDATE users SET role = $1 WHERE id = $2", [
         "student",
         id,
       ]);
-
+      const getLevelTasks = async (
+        level: number,
+        taskType: "basic" | "photo" | "friend",
+        limit: number
+      ) => {
+        return (
+          await db.query(
+            `SELECT * FROM level_tasks WHERE level = $1 AND task_type = $2 ORDER BY RANDOM() LIMIT $3;`,
+            [level, taskType, limit]
+          )
+        ).rows.map((el) => [el.id, id, "not completed", level, null]);
+      };
+      const levels0 = await getLevelTasks(0, "basic", 1);
+      const levels1basic = await getLevelTasks(1, "basic", 4);
+      const levels1photo = await getLevelTasks(1, "photo", 1);
+      const levels2basic = await getLevelTasks(2, "basic", 4);
+      const levels2photo = await getLevelTasks(2, "photo", 2);
+      const levels2friend = await getLevelTasks(2, "friend", 1);
+      const levels3basic = await getLevelTasks(3, "basic", 6);
+      const levels3photo = await getLevelTasks(3, "photo", 3);
+      const levels3friend = await getLevelTasks(3, "friend", 1);
+      const levels4basic = await getLevelTasks(4, "basic", 3);
+      const levels5photo = await getLevelTasks(5, "photo", 5);
+      const values = [
+        ...levels0,
+        ...levels1basic,
+        ...levels1photo,
+        ...levels2basic,
+        ...levels2photo,
+        ...levels2friend,
+        ...levels3basic,
+        ...levels3photo,
+        ...levels3friend,
+        ...levels4basic,
+        ...levels5photo,
+      ];
+      const tasks_ = await db.query(
+        "SELECT * FROM tasks_status WHERE user_id = $1",
+        [ctx.from?.id]
+      );
+      for (const item of tasks_.rows) {
+        await db.query("DELETE FROM tasks WHERE tasks_status_id = $1", [
+          item.id,
+        ]);
+      }
+      await db.query("DELETE FROM tasks_status WHERE user_id = $1", [
+        ctx.from?.id,
+      ]);
+      await db.query(
+        format(
+          "INSERT INTO tasks_status (task_id, user_id, status, level, friendship_id) VALUES %L",
+          values
+        )
+      );
       await bot.api.sendMessage(id, "Ваш аккаунт принят! ✅");
       setTimeout(
         async () =>
@@ -764,27 +851,28 @@ ${
             id,
             `👋 *Привет!*
   
-  Мы рады видеть тебя в числе участников флешмоба “_Я узнаю Сириус_”. 🌟
+Мы рады видеть тебя в числе участников флешмоба “_Я узнаю Сириус_”. 🌟
   
-  Уверены, что задания покажутся ★ _простыми_. И тебе не составит труда выполнить их *одним из первых*! 🏆`,
+Уверены, что задания покажутся ★ _простыми_. И тебе не составит труда выполнить их *одним из первых*! 🏆`,
             { parse_mode: "Markdown" }
           ),
         1000
       );
       setTimeout(
         async () =>
-          await ctx.reply(
+          await bot.api.sendMessage(
+            id,
             `💡 *Расскажем о правилах*
 
 🔹 _С 21 ноября по 8 декабря_ ты будешь регулярно получать задания. Каждый новый этап открывается постепенно. 
 
-🔄 *Выполнять задания* внутри этапа можно в течение всей недели. Если ты не можешь решить предлагаемую задачу, её можно *пропустить*, но это скажется на 🔷 количестве заработанных баллов.
+🔄 *Выполнять задания* внутри этапа можно в течение всей недели. Если ты не можешь решить предлагаемую задачу, её можно *пропустить*, но это скажется на количестве заработанных баллов.
 
 📅 *Последний, решающий этап* откроется 8 декабря, и он станет очным. _Не планируй ничего на этот день._
 
 📄 9 декабря будут опубликованы результаты и названы имена *лидеров*! 👑
 
-⚠️ *Об ограничениях*: использовать программы и приложения для фотомонтажа недопустимо, за это участник будет ❌ дисквалифицирован.
+⚠️ *Об ограничениях*: использовать программы и приложения для фотомонтажа недопустимо, за это участник будет дисквалифицирован.
 
 🙏 Желаем удачи!`,
             { parse_mode: "Markdown" }
@@ -794,7 +882,8 @@ ${
 
       setTimeout(
         async () =>
-          await ctx.reply(
+          await bot.api.sendMessage(
+            id,
             `🕵️‍♂️ *Какие задачи будут?*
 
 💡 Приводим пример:
@@ -802,34 +891,42 @@ ${
 
 👇 Есть варианты?
 
-🔄 Это 🦆 *лебедь*! 🪶
+🔄 Это *лебедь*! 🪶
 
 _Согласись, не так уж и сложно!_`,
-            {
-              parse_mode: "Markdown",
-              reply_markup: new InlineKeyboard().text("Начать 🚀", "openMenu"),
-            }
+            { parse_mode: "Markdown" }
           ),
         12000
       );
 
+      setTimeout(async () => {
+        const user = (await db.query(SELECT_USER, [id])).rows[0];
+        const isFriendship = await checkFriendship(user.id || 0);
+        await bot.api.sendMessage(
+          id,
+          "📃 <b><u>Меню</u></b>",
+          user.role.includes("admin")
+            ? { parse_mode: "HTML", reply_markup: IKAdminMenu }
+            : {
+                parse_mode: "HTML",
+                reply_markup: isFriendship ? IKUserFriendshipMenu : IKUserMenu,
+              }
+        );
+      }, 17000);
+      console.log(123);
       return reviewTask(ctx as MyContext);
-    case "reviewDecline":
-      await db.query(
-        "UPDATE tasks SET checked_by = $1 WHERE tasks_status_id = $2",
-        [ctx.from?.id, id]
-      );
-      const _status_task_ = await db.query(
-        "SELECT * FROM tasks_status WHERE id = $1",
-        [id]
-      );
-      await db.query("UPDATE tasks_status SET status = $1 WHERE id = $2", [
-        "not completed",
+
+    case "reviewRegDecline":
+      await db.query("UPDATE users SET role = $1 WHERE id = $2", [
+        "student_not_checked",
         id,
       ]);
       await bot.api.sendMessage(
-        _status_task_.rows[0].user_id,
-        "Ваше задание не принято, не расстраивайтесь, ждем вашу новую попытку!"
+        id,
+        "Ваши данные не были приняты, необходимо пройти регистрацию заново!",
+        {
+          reply_markup: new InlineKeyboard().text("Начать 🚀", "greeting"),
+        }
       );
       return reviewTask(ctx as MyContext);
     case "greeting":
