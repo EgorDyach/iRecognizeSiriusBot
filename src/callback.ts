@@ -562,6 +562,8 @@ LIMIT 10;`);
       );
       break;
     case "skipTaskConfirm":
+      // @ts-ignore
+      await ctx.conversation.exit();
       try {
         await ctx.editMessageReplyMarkup();
       } catch {}

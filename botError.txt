@@ -341,3 +341,25 @@
 21.11.2024 03:01:39: TypeError: Cannot read properties of undefined (reading 'getPhotoAnswer')
 
 21.11.2024 03:04:29: Error: exit conversation
+
+21.11.2024 03:46:17: TypeError: Cannot read properties of undefined (reading 'getTextAnswer')
+
+21.11.2024 03:54:42: TypeError: Cannot read properties of undefined (reading 'getTextAnswer')
+
+21.11.2024 04:02:18: GrammyError: Call to 'sendPhoto' failed! (400: Bad Request: wrong file identifier/HTTP URL specified)
+
+21.11.2024 04:02:43: GrammyError: Call to 'sendPhoto' failed! (400: Bad Request: wrong file identifier/HTTP URL specified)
+
+21.11.2024 04:02:59: GrammyError: Call to 'sendPhoto' failed! (400: Bad Request: wrong file identifier/HTTP URL specified)
+
+21.11.2024 04:03:32: GrammyError: Call to 'sendPhoto' failed! (400: Bad Request: wrong file identifier/HTTP URL specified)
+
+21.11.2024 04:04:24: GrammyError: Call to 'sendPhoto' failed! (400: Bad Request: wrong file identifier/HTTP URL specified)
+
+21.11.2024 04:08:28: TypeError: Cannot read properties of undefined (reading 'getTextAnswer')
+
+21.11.2024 04:14:09: TypeError: Cannot read properties of undefined (reading 'getTextAnswer')
+
+21.11.2024 04:15:14: TypeError: Cannot read properties of undefined (reading 'getTextAnswer')
+
+21.11.2024 04:16:05: TypeError: Cannot read properties of undefined (reading 'getTextAnswer')

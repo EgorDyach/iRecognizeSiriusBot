@@ -295,13 +295,10 @@ export const getTextAnswer = async (
   await ctx.reply(
     "Для выполнения задания пришлите текстовое сообщение с ответом."
   );
-  const res = await conversation.waitFor(":text", {
+  const res = await conversation.waitFor("message:text", {
+    drop: false,
     otherwise: async (ctx) => {
-      if (
-        ctx.callbackQuery ||
-        (ctx.message &&
-          (ctx.message.text === "/menu" || ctx.message.text === "/start"))
-      ) {
+      if (ctx.callbackQuery) {
         return;
       }
       try {
@@ -312,7 +309,15 @@ export const getTextAnswer = async (
       );
     },
   });
-  // @ts-ignore
+  if (
+    res.message &&
+    (res.message.text === "/menu" || res.message.text === "/start")
+  ) {
+    try {
+      await ctx.editMessageReplyMarkup();
+    } catch {}
+    return await setMenu(ctx);
+  }
   await db.query(
     "UPDATE tasks_status SET user_answer_text = $1, status =  $2 WHERE id = $3;",
     [
@@ -345,9 +350,8 @@ export const getPhotoAnswer = async (
   const photoRes = await conversation.waitFor(":photo", {
     otherwise: async (ctx) => {
       if (
-        ctx.callbackQuery ||
-        (ctx.message &&
-          (ctx.message.text === "/menu" || ctx.message.text === "/start"))
+        ctx.message &&
+        (ctx.message.text === "/menu" || ctx.message.text === "/start")
       ) {
         return;
       }
@@ -357,6 +361,7 @@ export const getPhotoAnswer = async (
       await ctx.reply("Необходимо прислать фото-селфи с нужным ответом.");
     },
   });
+
   await db.query(
     "UPDATE tasks_status SET user_answer_photo = $1, user_answer_text = $2, status = $3 WHERE id = $4",
     [
