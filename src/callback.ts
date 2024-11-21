@@ -52,7 +52,10 @@ export const callbackData = async (ctx: Context) => {
         const friend = await db.query(SELECT_USER, [f]);
         friends.push(friend.rows[0]);
       }
-      await ctx.editMessageText(
+      try {
+        await ctx.editMessageReplyMarkup();
+      } catch {}
+      await ctx.reply(
         `<b><u>Моя команда</u></b>
 
 ${friends
@@ -70,7 +73,10 @@ ${friends
     case "unlockLevelMenu":
       const settings_ = await db.query(SELECT_SETTINGS);
       const curLev = settings_.rows[0].level;
-      await ctx.editMessageText(
+      try {
+        await ctx.editMessageReplyMarkup();
+      } catch {}
+      await ctx.reply(
         `Вы уверены, что хотите открыть уровень ${
           curLev + 1 === 5 ? '"Финал"' : curLev + 1
         }?`,
@@ -79,7 +85,10 @@ ${friends
       break;
 
     case "unlockLevel":
-      await ctx.editMessageText(`Загрузка...`);
+      try {
+        await ctx.editMessageReplyMarkup();
+      } catch {}
+      await ctx.reply(`Загрузка...`);
       const settings__ = await db.query(SELECT_SETTINGS);
       const newLev = settings__.rows[0].level + 1;
       await db.query("UPDATE settings SET level = $1 WHERE id = 1", [newLev]);
@@ -95,7 +104,10 @@ ${friends
           }
         );
       }
-      await ctx.editMessageText(
+      try {
+        await ctx.editMessageReplyMarkup();
+      } catch {}
+      await ctx.reply(
         `🎉 Открыт <b><u>уровень ${newLev === 5 ? '"Финал"' : newLev}</u></b>!`,
         {
           parse_mode: "HTML",
@@ -115,19 +127,22 @@ ${friends
         "student",
         ctx.from?.id,
       ]);
-      await ctx.editMessageText("Спасибо за вашу помощь! 🫶🏻");
+      try {
+        await ctx.editMessageReplyMarkup();
+      } catch {}
+      await ctx.reply("Спасибо за вашу помощь! 🫶🏻");
       await ctx.reply("📃 <b><u>Меню</u></b>", {
         reply_markup: IKUserMenu,
         parse_mode: "HTML",
       });
       break;
     case "removeTaskMenu":
-      await ctx.editMessageText(
-        "Выберите уровень, на котором хотите удалить задание.",
-        {
-          reply_markup: IKRemoveLevel,
-        }
-      );
+      try {
+        await ctx.editMessageReplyMarkup();
+      } catch {}
+      await ctx.reply("Выберите уровень, на котором хотите удалить задание.", {
+        reply_markup: IKRemoveLevel,
+      });
       break;
 
     case "removeLevel":
@@ -144,7 +159,10 @@ ${friends
         .row();
 
       if (!items.rowCount) {
-        await ctx.editMessageText("Не удалось найти ни одного задания.", {
+        try {
+          await ctx.editMessageReplyMarkup();
+        } catch {}
+        await ctx.reply("Не удалось найти ни одного задания.", {
           reply_markup: inlineKeyboard,
         });
         return;
@@ -161,14 +179,20 @@ ${friends
           newKeyboard.row();
         }
       });
-      await ctx.editMessageText("Выберите задание, которое хотите удалить.", {
+      try {
+        await ctx.editMessageReplyMarkup();
+      } catch {}
+      await ctx.reply("Выберите задание, которое хотите удалить.", {
         reply_markup: inlineKeyboard,
       });
       break;
 
     case "removeTask":
       if (id === "back") {
-        await ctx.editMessageText(
+        try {
+          await ctx.editMessageReplyMarkup();
+        } catch {}
+        await ctx.reply(
           "Выберите уровень, на котором хотите удалить задание.",
           {
             reply_markup: IKRemoveLevel,
@@ -178,29 +202,32 @@ ${friends
       }
       try {
         await db.query("DELETE FROM level_tasks WHERE id = $1", [id]);
-        await ctx.editMessageText("✅ Успешно удалено!", {
+        try {
+          await ctx.editMessageReplyMarkup();
+        } catch {}
+        await ctx.reply("✅ Успешно удалено!", {
           reply_markup: new InlineKeyboard().text("< Назад", "removeTask_back"),
         });
       } catch (error) {
         const inlineKeyboard = new InlineKeyboard()
           .text("< Назад", "removeTask_back")
           .row();
-        await ctx.editMessageText(
-          `Не удалось удалить задание: ${String(error)}.`,
-          {
-            reply_markup: inlineKeyboard,
-          }
-        );
+        try {
+          await ctx.editMessageReplyMarkup();
+        } catch {}
+        await ctx.reply(`Не удалось удалить задание: ${String(error)}.`, {
+          reply_markup: inlineKeyboard,
+        });
       }
       break;
 
     case "viewTaskMenu":
-      await ctx.editMessageText(
-        "Выберите уровень, который хотите просмотреть.",
-        {
-          reply_markup: IKViewLevel,
-        }
-      );
+      try {
+        await ctx.editMessageReplyMarkup();
+      } catch {}
+      await ctx.reply("Выберите уровень, который хотите просмотреть.", {
+        reply_markup: IKViewLevel,
+      });
       break;
 
     case "viewLevel":
@@ -217,7 +244,10 @@ ${friends
         .row();
 
       if (!viewItems.rowCount) {
-        await ctx.editMessageText("Не удалось найти ни одного задания.", {
+        try {
+          await ctx.editMessageReplyMarkup();
+        } catch {}
+        await ctx.reply("Не удалось найти ни одного задания.", {
           reply_markup: viewInlineKeyboard,
         });
         return;
@@ -234,12 +264,12 @@ ${friends
           newKeyboard.row();
         }
       });
-      await ctx.editMessageText(
-        "Выберите задание, которое хотите просмотреть.",
-        {
-          reply_markup: viewInlineKeyboard,
-        }
-      );
+      try {
+        await ctx.editMessageReplyMarkup();
+      } catch {}
+      await ctx.reply("Выберите задание, которое хотите просмотреть.", {
+        reply_markup: viewInlineKeyboard,
+      });
       break;
     case "viewTask":
       if (id === "cancel") {
@@ -254,7 +284,10 @@ ${friends
       const task_ = await db.query("SELECT * FROM level_tasks WHERE id = $1", [
         id,
       ]);
-      if (task_.rows[0].photo)
+      if (task_.rows[0].photo) {
+        try {
+          await ctx.editMessageReplyMarkup();
+        } catch {}
         await ctx.replyWithPhoto(task_.rows[0].photo, {
           caption: `${
             taskTypeText[task_.rows[0].task_type as keyof typeof taskTypeText]
@@ -270,8 +303,11 @@ ${
 ❗️ Ответ: ${task_.rows[0].answer}`,
           reply_markup: viewItemInlineKeyboard,
         });
-      else
-        await ctx.editMessageText(
+      } else {
+        try {
+          await ctx.editMessageReplyMarkup();
+        } catch {}
+        await ctx.reply(
           `${taskTypeText[task_.rows[0].task_type as keyof typeof taskTypeText]}
 
 ✏️ Задание: ${task_.rows[0].task}
@@ -285,14 +321,15 @@ ${
 ❗️ Ответ: ${task_.rows[0].answer}`,
           { reply_markup: viewItemInlineKeyboard }
         );
+      }
       break;
     case "addTaskMenu":
-      await ctx.editMessageText(
-        "Выберите уровень, на который хотите добавить задание.",
-        {
-          reply_markup: IKAddLevel,
-        }
-      );
+      try {
+        await ctx.editMessageReplyMarkup();
+      } catch {}
+      await ctx.reply("Выберите уровень, на который хотите добавить задание.", {
+        reply_markup: IKAddLevel,
+      });
       break;
 
     case "addTaskLevel":
@@ -311,14 +348,20 @@ ${
         .row()
         .text("📝 Простое задание", "addTask_basic");
 
-      await ctx.editMessageText("Выберите задание, которое хотите добавить.", {
+      try {
+        await ctx.editMessageReplyMarkup();
+      } catch {}
+      await ctx.reply("Выберите задание, которое хотите добавить.", {
         reply_markup: inlineKeyboardAdd,
       });
       break;
 
     case "addTask":
       if (id === "back") {
-        await ctx.editMessageText(
+        try {
+          await ctx.editMessageReplyMarkup();
+        } catch {}
+        await ctx.reply(
           "Выберите уровень, на котором хотите добавить задание.",
           {
             reply_markup: IKAddLevel,
@@ -334,7 +377,10 @@ ${
 
     // USER
     case "contacts":
-      await ctx.editMessageText(
+      try {
+        await ctx.editMessageReplyMarkup();
+      } catch {}
+      await ctx.reply(
         `<b><u>Контакты</u></b>
 
 🤖 Ник бота: @iRecognizeSiriusbot;
@@ -347,7 +393,10 @@ ${
       );
       break;
     case "rules":
-      await ctx.editMessageText(
+      try {
+        await ctx.editMessageReplyMarkup();
+      } catch {}
+      await ctx.reply(
         `🤖 Флешмоб <b>«Я узнаю Сириус»</b>
 
 📅 Период проведения: <i>21 ноября – 9 декабря 2024 года</i>
@@ -366,7 +415,10 @@ ${
     case "rulesItem":
       switch (id) {
         case "calendar":
-          await ctx.editMessageText(
+          try {
+            await ctx.editMessageReplyMarkup();
+          } catch {}
+          await ctx.reply(
             `🗓 <b><u>Календарь проведения</u></b>
 
 ✔️ <b>c 21 ноября</b>: регистрация
@@ -384,7 +436,10 @@ ${
           );
           break;
         case "algorithm":
-          await ctx.editMessageText(
+          try {
+            await ctx.editMessageReplyMarkup();
+          } catch {}
+          await ctx.reply(
             `📋 <b><u>Алгоритм участия</u></b>
 
 📝 <b>Регистрация</b>:
@@ -412,7 +467,10 @@ ${
           );
           break;
         case "steps":
-          await ctx.editMessageText(
+          try {
+            await ctx.editMessageReplyMarkup();
+          } catch {}
+          await ctx.reply(
             `📋 <b><u>📊 Этапы флешмоба</u></b>
 
 1️⃣ <b>Первый этап (с 21 ноября):</b>
@@ -442,7 +500,10 @@ ${
           break;
 
         case "results":
-          await ctx.editMessageText(
+          try {
+            await ctx.editMessageReplyMarkup();
+          } catch {}
+          await ctx.reply(
             `📋 <b><u>📊 🏆 Итоги</u></b>
 
 🎉 <u><i>9 декабря</i></u> будет опубликована рейтинговая таблица с баллами.
@@ -455,7 +516,10 @@ ${
           );
           break;
         default:
-          await ctx.editMessageText(
+          try {
+            await ctx.editMessageReplyMarkup();
+          } catch {}
+          await ctx.reply(
             `🤖 Флешмоб <b>«Я узнаю Сириус»</b>
 
 📅 Период проведения: <i>21 ноября – 9 декабря 2024 года</i>
@@ -482,7 +546,10 @@ FROM users
 ORDER BY points DESC
 LIMIT 10;`);
 
-      await ctx.editMessageText(
+      try {
+        await ctx.editMessageReplyMarkup();
+      } catch {}
+      await ctx.reply(
         `<b><u>📊 Рейтинг</u></b>
 
 ✍️ У вас <b>${plural(points || 0, "%d балл", "%d балла", "%d баллов")}</b>
@@ -494,19 +561,49 @@ LIMIT 10;`);
         }
       );
       break;
+    case "skipTaskConfirm":
+      try {
+        await ctx.editMessageReplyMarkup();
+      } catch {}
+      await ctx.reply(
+        "Вы уверены что хотите пропустить задание? Вы не сможете вернуться к нему.",
+        {
+          reply_markup: new InlineKeyboard()
+            .text("⚫️ Пропустить", `skipTask_${id}`)
+            .row()
+            .text("< Отмена", `task_${id}`),
+        }
+      );
+      break;
+    case "skipTask":
+      await db.query("UPDATE tasks_status SET status = $1 WHERE id = $2", [
+        "skipped",
+        id,
+      ]);
+      try {
+        await ctx.editMessageReplyMarkup();
+      } catch {}
+      await ctx.reply("Вы пропустили задание, можете приступать к следующим!");
+      await setMenu(ctx);
+      break;
     case "levels":
       const allLevels = await db.query(
         "SELECT * FROM tasks_status WHERE user_id = $1",
         [ctx.from?.id]
       );
       const settings = await db.query("SELECT * FROM settings");
-
-      await ctx.editMessageText("🔢 <b><u>Уровни</u></b>", {
+      try {
+        await ctx.editMessageReplyMarkup();
+      } catch {}
+      await ctx.reply("🔢 <b><u>Уровни</u></b>", {
         reply_markup: new InlineKeyboard()
           .text(
             `${
               !allLevels.rows.filter(
-                (el) => el.level === 0 && el.status !== "completed"
+                (el) =>
+                  el.level === 0 &&
+                  el.status !== "completed" &&
+                  el.status !== "skipped"
               ).length
                 ? "✅ "
                 : ""
@@ -519,18 +616,27 @@ LIMIT 10;`);
               settings.rows[0].level < 1
                 ? "🚫 "
                 : allLevels.rows.filter(
-                    (el) => el.level === 0 && el.status !== "completed"
+                    (el) =>
+                      el.level === 0 &&
+                      el.status !== "completed" &&
+                      el.status !== "skipped"
                   ).length
                 ? "🔒 "
                 : !allLevels.rows.filter(
-                    (el) => el.level === 1 && el.status !== "completed"
+                    (el) =>
+                      el.level === 1 &&
+                      el.status !== "completed" &&
+                      el.status !== "skipped"
                   ).length
                 ? "✅ "
                 : ""
             }Уровень 1`,
             settings.rows[0].level < 1 ||
               allLevels.rows.filter(
-                (el) => el.level === 0 && el.status !== "completed"
+                (el) =>
+                  el.level === 0 &&
+                  el.status !== "completed" &&
+                  el.status !== "skipped"
               ).length
               ? "nothing"
               : "levelMenu_1"
@@ -541,18 +647,27 @@ LIMIT 10;`);
               settings.rows[0].level < 2
                 ? "🚫 "
                 : allLevels.rows.filter(
-                    (el) => el.level === 1 && el.status !== "completed"
+                    (el) =>
+                      el.level === 1 &&
+                      el.status !== "completed" &&
+                      el.status !== "skipped"
                   ).length
                 ? "🔒 "
                 : !allLevels.rows.filter(
-                    (el) => el.level === 2 && el.status !== "completed"
+                    (el) =>
+                      el.level === 2 &&
+                      el.status !== "completed" &&
+                      el.status !== "skipped"
                   ).length
                 ? "✅ "
                 : ""
             }Уровень 2`,
             settings.rows[0].level < 2 ||
               allLevels.rows.filter(
-                (el) => el.level === 1 && el.status !== "completed"
+                (el) =>
+                  el.level === 1 &&
+                  el.status !== "completed" &&
+                  el.status !== "skipped"
               ).length
               ? "nothing"
               : "levelMenu_2"
@@ -563,18 +678,27 @@ LIMIT 10;`);
               settings.rows[0].level < 3
                 ? "🚫 "
                 : allLevels.rows.filter(
-                    (el) => el.level === 2 && el.status !== "completed"
+                    (el) =>
+                      el.level === 2 &&
+                      el.status !== "completed" &&
+                      el.status !== "skipped"
                   ).length
                 ? "🔒 "
                 : !allLevels.rows.filter(
-                    (el) => el.level === 3 && el.status !== "completed"
+                    (el) =>
+                      el.level === 3 &&
+                      el.status !== "completed" &&
+                      el.status !== "skipped"
                   ).length
                 ? "✅ "
                 : ""
             }Уровень 3`,
             settings.rows[0].level < 3 ||
               allLevels.rows.filter(
-                (el) => el.level === 2 && el.status !== "completed"
+                (el) =>
+                  el.level === 2 &&
+                  el.status !== "completed" &&
+                  el.status !== "skipped"
               ).length
               ? "nothing"
               : "levelMenu_3"
@@ -585,18 +709,27 @@ LIMIT 10;`);
               settings.rows[0].level < 4
                 ? "🚫 "
                 : allLevels.rows.filter(
-                    (el) => el.level === 3 && el.status !== "completed"
+                    (el) =>
+                      el.level === 3 &&
+                      el.status !== "completed" &&
+                      el.status !== "skipped"
                   ).length
                 ? "🔒 "
                 : !allLevels.rows.filter(
-                    (el) => el.level === 4 && el.status !== "completed"
+                    (el) =>
+                      el.level === 4 &&
+                      el.status !== "completed" &&
+                      el.status !== "skipped"
                   ).length
                 ? "✅ "
                 : ""
             }Уровень 4`,
             settings.rows[0].level < 4 ||
               allLevels.rows.filter(
-                (el) => el.level === 3 && el.status !== "completed"
+                (el) =>
+                  el.level === 3 &&
+                  el.status !== "completed" &&
+                  el.status !== "skipped"
               ).length
               ? "nothing"
               : "levelMenu_4"
@@ -607,18 +740,27 @@ LIMIT 10;`);
               settings.rows[0].level < 5
                 ? "🚫 "
                 : allLevels.rows.filter(
-                    (el) => el.level === 4 && el.status !== "completed"
+                    (el) =>
+                      el.level === 4 &&
+                      el.status !== "completed" &&
+                      el.status !== "skipped"
                   ).length
                 ? "🔒 "
                 : !allLevels.rows.filter(
-                    (el) => el.level === 4 && el.status !== "completed"
+                    (el) =>
+                      el.level === 5 &&
+                      el.status !== "completed" &&
+                      el.status !== "skipped"
                   ).length
                 ? "✅ "
                 : ""
             }Финал`,
             settings.rows[0].level < 5 ||
               allLevels.rows.filter(
-                (el) => el.level === 4 && el.status !== "completed"
+                (el) =>
+                  el.level === 4 &&
+                  el.status !== "completed" &&
+                  el.status !== "skipped"
               ).length
               ? "nothing"
               : "levelMenu_5"
@@ -631,7 +773,7 @@ LIMIT 10;`);
     case "levelMenu":
       const levelTasks = (
         await db.query(
-          "SELECT * FROM tasks_status WHERE user_id = $1 AND level = $2",
+          "SELECT * FROM tasks_status WHERE user_id = $1 AND level = $2 ORDER BY id ASC",
           [ctx.from?.id, id]
         )
       ).rows;
@@ -666,8 +808,13 @@ LIMIT 10;`);
             .row();
       });
       tasksKeyboard.text("< Назад", "levels");
-      await ctx.editMessageText(
-        id === "0" ? "Пробный уровень" : `Уровень ${id}`,
+      try {
+        await ctx.editMessageReplyMarkup();
+      } catch {}
+      await ctx.reply(
+        id === "0"
+          ? "Пробный уровень"
+          : `Уровень ${id === "5" ? '"Финал"' : id}`,
         {
           reply_markup: tasksKeyboard,
         }
@@ -682,8 +829,16 @@ LIMIT 10;`);
           taskLevel.task_id,
         ])
       ).rows[0];
-      await ctx.editMessageText(
-        `${taskTypeText[task.task_type as keyof typeof taskTypeText]}
+      if (task.photo) {
+        try {
+          await ctx.editMessageReplyMarkup();
+        } catch {}
+        await ctx.replyWithPhoto(task.photo, {
+          reply_markup: new InlineKeyboard().text(
+            "⚫️ Пропуск задания",
+            `skipTaskConfirm_${id}`
+          ),
+          caption: `${taskTypeText[task.task_type as keyof typeof taskTypeText]}
 
 ✏️ Задание: ${task.task}
 ${
@@ -691,10 +846,29 @@ ${
     ? `
 📑 Описание: ${task.task_description}`
     : ""
-}`
-      );
-      if (task.photo) {
-        await ctx.replyWithPhoto(task.photo);
+}`,
+        });
+      } else {
+        try {
+          await ctx.editMessageReplyMarkup();
+        } catch {}
+        await ctx.reply(
+          `${taskTypeText[task.task_type as keyof typeof taskTypeText]}
+  
+  ✏️ Задание: ${task.task}
+  ${
+    task.task_description
+      ? `
+  📑 Описание: ${task.task_description}`
+      : ""
+  }`,
+          {
+            reply_markup: new InlineKeyboard().text(
+              "⚫️ Пропуск задания",
+              `skipTaskConfirm_${id}`
+            ),
+          }
+        );
       }
       // @ts-ignore
       ctx.session.taskId = id;
@@ -723,6 +897,10 @@ ${
       const status_task = await db.query(
         "SELECT * FROM tasks_status WHERE id = $1",
         [id]
+      );
+      const levelTask = await db.query(
+        "SELECT * FROM level_tasks WHERE id = $1",
+        [status_task.rows[0].task_id]
       );
       await db.query("UPDATE tasks_status SET status = $1 WHERE id = $2", [
         "completed",
@@ -763,7 +941,17 @@ ${
       ]);
       await bot.api.sendMessage(
         status_task.rows[0].user_id,
-        "Ваше задание принято, обновите меню! 🎉"
+        `Ваше задание (${
+          status_task.rows[0].level === 0
+            ? "Пробный уровень"
+            : `Уровень ${
+                status_task.rows[0].level === 5
+                  ? '"Финал"'
+                  : status_task.rows[0].level
+              }`
+        }, ${
+          taskTypeText[levelTask.rows[0].task_type as keyof typeof taskTypeText]
+        }) принято, обновите меню! 🎉`
       );
       return reviewTask(ctx as MyContext);
     case "reviewDecline":
@@ -775,13 +963,29 @@ ${
         "SELECT * FROM tasks_status WHERE id = $1",
         [id]
       );
+      const _levelTask = await db.query(
+        "SELECT * FROM level_tasks WHERE id = $1",
+        [_status_task.rows[0].task_id]
+      );
       await db.query("UPDATE tasks_status SET status = $1 WHERE id = $2", [
         "not completed",
         id,
       ]);
       await bot.api.sendMessage(
         _status_task.rows[0].user_id,
-        "Ваше задание не принято, не расстраивайтесь, ждем вашу новую попытку!"
+        `Ваше задание (${
+          _status_task.rows[0].level === 0
+            ? "Пробный уровень"
+            : `Уровень ${
+                _status_task.rows[0].level === 5
+                  ? '"Финал"'
+                  : _status_task.rows[0].level
+              }`
+        }, ${
+          taskTypeText[
+            _levelTask.rows[0].task_type as keyof typeof taskTypeText
+          ]
+        }) не принято, не расстраивайтесь, ждем вашу новую попытку!`
       );
       return reviewTask(ctx as MyContext);
 
@@ -913,7 +1117,6 @@ _Согласись, не так уж и сложно!_`,
               }
         );
       }, 17000);
-      console.log(123);
       return reviewTask(ctx as MyContext);
 
     case "reviewRegDecline":

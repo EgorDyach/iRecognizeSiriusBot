@@ -55,6 +55,9 @@ bot.command("start", async (ctx) => {
         0,
       ]
     );
+    try {
+      await ctx.editMessageReplyMarkup();
+    } catch {}
     await ctx.reply(
       "Привет! Для участия во флешмобе необходимо пройти обязательную регистрацию!"
     );
@@ -62,6 +65,9 @@ bot.command("start", async (ctx) => {
     await ctx.conversation.enter("greeting");
     return;
   }
+  try {
+    await ctx.editMessageReplyMarkup();
+  } catch {}
   await setMenu(ctx);
 });
 
@@ -79,11 +85,16 @@ bot.catch((ctx) => {
 });
 
 bot.command("reset_tasks", async (ctx) => {
+  try {
+    await ctx.editMessageReplyMarkup();
+  } catch {}
   await resetData(ctx);
-  await setMenu(ctx);
 });
 
 bot.command("menu", async (ctx) => {
+  try {
+    await ctx.editMessageReplyMarkup();
+  } catch {}
   await setMenu(ctx);
 });
 

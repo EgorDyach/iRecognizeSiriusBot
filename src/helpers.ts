@@ -14,14 +14,19 @@ export const reviewTask = async (ctx: MyContext) => {
     "SELECT * FROM tasks WHERE checked_by IS NULL ORDER BY id ASC LIMIT 1;"
   );
   if (!uncheckedTasks.rowCount && !uncheckedRegs.rowCount) {
-    await ctx.editMessageText("Отчетов на данный момент нет!", {
+    try {
+      await ctx.editMessageReplyMarkup();
+    } catch {}
+    await ctx.reply("Отчетов на данный момент нет!", {
       reply_markup: new InlineKeyboard().text("В меню", "openMenu"),
     });
     return;
   }
   if (uncheckedRegs.rowCount) {
     const user = uncheckedRegs.rows[0];
-
+    try {
+      await ctx.editMessageReplyMarkup();
+    } catch {}
     await ctx.replyWithMediaGroup([InputMediaBuilder.photo(user.photo)]);
     await ctx.reply(
       `👤 Новый пользователь:
@@ -66,7 +71,9 @@ export const reviewTask = async (ctx: MyContext) => {
       ? [InputMediaBuilder.photo(task_status_data.user_answer_photo)]
       : [],
   ].flat();
-
+  try {
+    await ctx.editMessageReplyMarkup();
+  } catch {}
   await ctx.replyWithMediaGroup(photos);
   const IKReview = new InlineKeyboard()
     .text(
@@ -192,6 +199,9 @@ export async function resetData(ctx: Context) {
       values
     )
   );
+  try {
+    await ctx.editMessageReplyMarkup();
+  } catch {}
   await ctx.reply(`Ваши задания обновлены! 🤝`);
   await setMenu(ctx);
 }

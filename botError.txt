@@ -273,3 +273,71 @@
 20.11.2024 13:24:13: GrammyError: Call to 'editMessageText' failed! (400: Bad Request: message is not modified: specified new message content and reply markup are exactly the same as a current content and reply markup of the message)
 
 20.11.2024 15:33:41: TypeError: Cannot read properties of undefined (reading 'level')
+
+20.11.2024 16:23:06: GrammyError: Call to 'answerCallbackQuery' failed! (400: Bad Request: query is too old and response timeout expired or query ID is invalid)
+
+20.11.2024 19:39:21: ReferenceError: Cannot access 'photoRes' before initialization
+
+20.11.2024 19:41:46: TypeError: Cannot read properties of undefined (reading 'getPhotoAnswer')
+
+20.11.2024 19:44:50: Error: exit conversation
+
+20.11.2024 19:45:22: Error: exit conversation
+
+20.11.2024 19:45:33: Error: exit conversation
+
+20.11.2024 19:56:13: Error: exit conversation
+
+20.11.2024 20:39:54: Error: exit conversation
+
+20.11.2024 20:41:43: Error: exit conversation
+
+20.11.2024 20:47:44: TypeError: Cannot read properties of undefined (reading 'message_id')
+
+20.11.2024 20:49:03: TypeError: Cannot read properties of undefined (reading 'message_id')
+
+21.11.2024 00:59:12: Error: exit conversation
+
+21.11.2024 01:48:44: GrammyError: Call to 'answerCallbackQuery' failed! (400: Bad Request: query is too old and response timeout expired or query ID is invalid)
+
+21.11.2024 01:48:45: GrammyError: Call to 'answerCallbackQuery' failed! (400: Bad Request: query is too old and response timeout expired or query ID is invalid)
+
+21.11.2024 01:48:45: GrammyError: Call to 'answerCallbackQuery' failed! (400: Bad Request: query is too old and response timeout expired or query ID is invalid)
+
+21.11.2024 01:48:45: GrammyError: Call to 'answerCallbackQuery' failed! (400: Bad Request: query is too old and response timeout expired or query ID is invalid)
+
+21.11.2024 02:15:55: GrammyError: Call to 'sendPhoto' failed! (400: Bad Request: wrong file identifier/HTTP URL specified)
+
+21.11.2024 02:17:32: HttpError: Network request for 'sendMessage' failed!
+
+21.11.2024 02:17:48: GrammyError: Call to 'answerCallbackQuery' failed! (400: Bad Request: query is too old and response timeout expired or query ID is invalid)
+
+21.11.2024 02:17:48: GrammyError: Call to 'answerCallbackQuery' failed! (400: Bad Request: query is too old and response timeout expired or query ID is invalid)
+
+21.11.2024 02:17:48: GrammyError: Call to 'answerCallbackQuery' failed! (400: Bad Request: query is too old and response timeout expired or query ID is invalid)
+
+21.11.2024 02:22:15: GrammyError: Call to 'sendPhoto' failed! (400: Bad Request: wrong file identifier/HTTP URL specified)
+
+21.11.2024 02:22:54: Error: exit conversation
+
+21.11.2024 02:31:29: GrammyError: Call to 'editMessageReplyMarkup' failed! (400: Bad Request: message can't be edited)
+
+21.11.2024 02:31:33: GrammyError: Call to 'editMessageReplyMarkup' failed! (400: Bad Request: message can't be edited)
+
+21.11.2024 02:31:53: GrammyError: Call to 'editMessageReplyMarkup' failed! (400: Bad Request: message is not modified: specified new message content and reply markup are exactly the same as a current content and reply markup of the message)
+
+21.11.2024 02:31:59: GrammyError: Call to 'editMessageReplyMarkup' failed! (400: Bad Request: message is not modified: specified new message content and reply markup are exactly the same as a current content and reply markup of the message)
+
+21.11.2024 02:33:48: GrammyError: Call to 'editMessageReplyMarkup' failed! (400: Bad Request: message is not modified: specified new message content and reply markup are exactly the same as a current content and reply markup of the message)
+
+21.11.2024 02:34:29: Error: exit conversation
+
+21.11.2024 02:35:01: Error: exit conversation
+
+21.11.2024 02:38:32: TypeError: Cannot read properties of undefined (reading 'getPhotoAnswer')
+
+21.11.2024 03:01:08: TypeError: Cannot read properties of undefined (reading 'getPhotoAnswer')
+
+21.11.2024 03:01:39: TypeError: Cannot read properties of undefined (reading 'getPhotoAnswer')
+
+21.11.2024 03:04:29: Error: exit conversation

@@ -14,7 +14,10 @@ export async function createNewTask(
   conversation: MyConversation,
   ctx: MyContext
 ) {
-  await ctx.editMessageText("Введите само задание.", {
+  try {
+    await ctx.editMessageReplyMarkup();
+  } catch {}
+  await ctx.reply("Введите само задание.", {
     reply_markup: IKCancelAddingTask,
   });
 
@@ -27,7 +30,9 @@ export async function createNewTask(
       await ctx.reply("Необходимо ввести задание.");
     },
   });
-
+  try {
+    await ctx.editMessageReplyMarkup();
+  } catch {}
   await ctx.reply("Вводить описание заданию?", {
     reply_markup: new Keyboard().text("Да").text("Нет").resized().oneTime(),
   });
@@ -58,6 +63,9 @@ export async function createNewTask(
   let description = null;
 
   if (yesOrNo === "Да") {
+    try {
+      await ctx.editMessageReplyMarkup();
+    } catch {}
     await ctx.reply("Введите описание задания.");
     const msg = await conversation.waitFor(":text", {
       otherwise: async (ctx) => {
@@ -66,7 +74,9 @@ export async function createNewTask(
     });
     description = msg.message?.text;
   }
-
+  try {
+    await ctx.editMessageReplyMarkup();
+  } catch {}
   await ctx.reply("Прикреплять фото к заданию?", {
     reply_markup: new Keyboard().text("Да").text("Нет").resized().oneTime(),
   });
@@ -92,6 +102,9 @@ export async function createNewTask(
 
   let photo = null;
   if (yesOrNo === "Да") {
+    try {
+      await ctx.editMessageReplyMarkup();
+    } catch {}
     await ctx.reply("Пришлите фото к заданию.");
     const msg = await conversation.waitFor(":photo", {
       otherwise: async (ctx) =>
@@ -104,7 +117,9 @@ export async function createNewTask(
       photo = msg.message?.photo;
     }
   }
-
+  try {
+    await ctx.editMessageReplyMarkup();
+  } catch {}
   await ctx.reply("Введите ответ на задание.", {
     reply_markup: { remove_keyboard: true },
   });
@@ -114,6 +129,9 @@ export async function createNewTask(
   });
 
   if (photo) {
+    try {
+      await ctx.editMessageReplyMarkup();
+    } catch {}
     await ctx.replyWithPhoto(photo[photo.length - 1].file_id, {
       caption: `🔢 Уровень: ${
         // @ts-ignore
@@ -136,6 +154,9 @@ ${
 ❗️ Ответ: ${answer.message?.text}`,
     });
   } else {
+    try {
+      await ctx.editMessageReplyMarkup();
+    } catch {}
     await ctx.reply(
       `🔢 Уровень: ${
         // @ts-ignore
@@ -172,18 +193,27 @@ ${
       ctx.session.addingTaskLevel,
     ]
   );
+  try {
+    await ctx.editMessageReplyMarkup();
+  } catch {}
   await ctx.reply("✅ Задание успешно создано!", {
     reply_markup: IKAdminMenu,
   });
 }
 
 export async function greeting(conversation: MyConversation, ctx: MyContext) {
+  try {
+    await ctx.editMessageReplyMarkup();
+  } catch {}
   await ctx.reply("Как вас зовут? (ФИО)");
   const nameRes = await conversation.waitFor("msg:text", {
     otherwise: async (ctx) => await ctx.reply("Необходимо ввести ФИО."),
   });
   let name = nameRes.message?.text || "";
   while (name.split(" ").length < 3) {
+    try {
+      await ctx.editMessageReplyMarkup();
+    } catch {}
     await ctx.reply("Необходимо ввести ФИО.");
     const nameRes = await conversation.waitFor("msg:text", {
       otherwise: async (ctx) => await ctx.reply("Необходимо ввести ФИО."),
@@ -195,9 +225,13 @@ export async function greeting(conversation: MyConversation, ctx: MyContext) {
     name,
     ctx.from?.id,
   ]);
-
+  try {
+    await ctx.editMessageReplyMarkup();
+  } catch {}
   await ctx.reply("Приятно познакомиться!");
-
+  try {
+    await ctx.editMessageReplyMarkup();
+  } catch {}
   await ctx.reply("С какого вы курса?");
   let course = await conversation.waitFor("msg:text", {
     otherwise: async (ctx) => await ctx.reply("Необходимо ввести номер курса."),
@@ -213,6 +247,9 @@ export async function greeting(conversation: MyConversation, ctx: MyContext) {
     course.message?.text,
     ctx.from?.id,
   ]);
+  try {
+    await ctx.editMessageReplyMarkup();
+  } catch {}
   await ctx.reply("А из какой группы?");
   const group = await conversation.waitFor("msg:text", {
     otherwise: async (ctx) =>
@@ -222,6 +259,9 @@ export async function greeting(conversation: MyConversation, ctx: MyContext) {
     group.message?.text,
     ctx.from?.id,
   ]);
+  try {
+    await ctx.editMessageReplyMarkup();
+  } catch {}
   await ctx.reply(
     "Теперь пришлите мне свое портретное фото!\nВажно, это фото будет использоваться для проверки выполнения заданий по селфи!"
   );
@@ -238,6 +278,9 @@ export async function greeting(conversation: MyConversation, ctx: MyContext) {
     "student_is_checking",
     ctx.from?.id,
   ]);
+  try {
+    await ctx.editMessageReplyMarkup();
+  } catch {}
   await ctx.reply(
     "Отлично! Мы проверим ваш аккаунт, пришлем вам результат и вы сможете принять участие!"
   );
@@ -246,14 +289,28 @@ export const getTextAnswer = async (
   conversation: MyConversation,
   ctx: MyContext
 ) => {
+  try {
+    await ctx.editMessageReplyMarkup();
+  } catch {}
   await ctx.reply(
     "Для выполнения задания пришлите текстовое сообщение с ответом."
   );
   const res = await conversation.waitFor(":text", {
-    otherwise: async (ctx) =>
+    otherwise: async (ctx) => {
+      if (
+        ctx.callbackQuery ||
+        (ctx.message &&
+          (ctx.message.text === "/menu" || ctx.message.text === "/start"))
+      ) {
+        return;
+      }
+      try {
+        await ctx.editMessageReplyMarkup();
+      } catch {}
       await ctx.reply(
         "Необходимо прислать текстовое сообщение с нужным ответом."
-      ),
+      );
+    },
   });
   // @ts-ignore
   await db.query(
@@ -271,6 +328,9 @@ export const getTextAnswer = async (
     // @ts-ignore
     [ctx.session.taskId, null]
   );
+  try {
+    await ctx.editMessageReplyMarkup();
+  } catch {}
   await ctx.reply("Ваше задание на проверке.", {
     reply_markup: IKUserMenu,
   });
@@ -283,8 +343,19 @@ export const getPhotoAnswer = async (
     "Для выполнения задания пришлите фото-селфи с нужным ответом."
   );
   const photoRes = await conversation.waitFor(":photo", {
-    otherwise: async (ctx) =>
-      await ctx.reply("Необходимо прислать фото-селфи с нужным ответом."),
+    otherwise: async (ctx) => {
+      if (
+        ctx.callbackQuery ||
+        (ctx.message &&
+          (ctx.message.text === "/menu" || ctx.message.text === "/start"))
+      ) {
+        return;
+      }
+      try {
+        await ctx.editMessageReplyMarkup();
+      } catch {}
+      await ctx.reply("Необходимо прислать фото-селфи с нужным ответом.");
+    },
   });
   await db.query(
     "UPDATE tasks_status SET user_answer_photo = $1, user_answer_text = $2, status = $3 WHERE id = $4",
@@ -301,6 +372,9 @@ export const getPhotoAnswer = async (
     // @ts-ignore
     [ctx.session.taskId, null]
   );
+  try {
+    await ctx.editMessageReplyMarkup();
+  } catch {}
   await ctx.reply("Ваше задание на проверке.", {
     reply_markup: IKUserMenu,
   });
@@ -314,6 +388,9 @@ export const getFriendAnswer = async (
     .text("Создать команду")
     .text("Присоединиться")
     .resized();
+  try {
+    await ctx.editMessageReplyMarkup();
+  } catch {}
   await ctx.reply(
     "Для выполнения задания необходимо создать свою команду или присоединиться к кому-то.",
     { reply_markup: myKeyboard }
@@ -342,6 +419,9 @@ export const getFriendAnswer = async (
       .text("Создать команду")
       .text("В меню")
       .resized();
+    try {
+      await ctx.editMessageReplyMarkup();
+    } catch {}
     await ctx.reply(
       "Введите ID команды в формате, получить его можно у одного из сокомандников.",
       {
@@ -409,6 +489,9 @@ WHERE id = $2
 RETURNING *;`,
         [friendShipRes.rows[0].id, user.rows[0].id]
       );
+      try {
+        await ctx.editMessageReplyMarkup();
+      } catch {}
       await ctx.reply(`Добавили вас в команду ${t.rows[0].name}.`);
       for (const user of friendShipRes.rows[0].users_ids) {
         await bot.api.sendMessage(
@@ -443,6 +526,9 @@ RETURNING *;`,
           "UPDATE tasks_status SET status = $1 WHERE user_id = $2 AND task_id = $3",
           ["completed", user, r.rows[0].id]
         );
+        try {
+          await ctx.editMessageReplyMarkup();
+        } catch {}
         await ctx.reply(
           " 🎉 Вы выполнили задание на создание команды из 4 человек!"
         );
@@ -496,8 +582,9 @@ RETURNING *;`,
     user.rows[0].id,
   ]);
 
-  // Return the result of the insert
-  // return insertResult.rows[0];
+  try {
+    await ctx.editMessageReplyMarkup();
+  } catch {}
   await ctx.reply(
     `Команда создана! Название вашей команды: ${insertResult.rows[0].name}. 
 
@@ -510,16 +597,25 @@ RETURNING *;`,
 export const setMenu = async (ctx: Context) => {
   const user = (await db.query(SELECT_USER, [ctx.from?.id])).rows[0];
   if (user.role === "student_not_checked") {
+    try {
+      await ctx.editMessageReplyMarkup();
+    } catch {}
     await ctx.reply("Необходимо пройти регистрацию!");
     return;
   }
   if (user.role === "student_is_checking") {
+    try {
+      await ctx.editMessageReplyMarkup();
+    } catch {}
     await ctx.reply("Необходимо дождаться проверки!");
     return;
   }
   const isFriendship = await checkFriendship(ctx.from?.id || 0);
   try {
-    await ctx.editMessageText(
+    try {
+      await ctx.editMessageReplyMarkup();
+    } catch {}
+    await ctx.reply(
       "📃 <b><u>Меню</u></b>",
       user.role.includes("admin")
         ? { parse_mode: "HTML", reply_markup: IKAdminMenu }

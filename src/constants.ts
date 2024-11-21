@@ -35,6 +35,7 @@ export const tasksKeyboardEmoji = {
   "not completed": "⭕️",
   completed: "✅",
   checking: "🔘",
+  skipped: "⚫️",
 };
 
 export const tasksKeyboardName = {
