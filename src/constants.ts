@@ -36,6 +36,7 @@ export const tasksKeyboardEmoji = {
   completed: "✅",
   checking: "🔘",
   skipped: "⚫️",
+  waiting_fr: "🕒",
 };
 
 export const tasksKeyboardName = {

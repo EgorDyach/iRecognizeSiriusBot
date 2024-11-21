@@ -475,6 +475,12 @@ export const getFriendAnswer = async (
       );
     }
     if (friendShipRes.rowCount) {
+      // if (friendShipRes.rowCount[0].users_ids.length >= 4) {
+      //   try {
+      //     await ctx.editMessageReplyMarkup();
+      //   } catch {}
+      //   return await ctx.reply('Команда заполнена.');
+      // }
       const user = await db.query(SELECT_USER, [ctx.from?.id]);
       await db.query(
         "UPDATE friendships SET users_nicks = $1, users_ids = $2 WHERE id = $3",
@@ -497,11 +503,11 @@ RETURNING *;`,
       try {
         await ctx.editMessageReplyMarkup();
       } catch {}
-      await ctx.reply(`Добавили вас в команду ${t.rows[0].name}.`);
+      await ctx.reply(`Добавили вас в команду ${friendShipRes.rows[0].name}.`);
       for (const user of friendShipRes.rows[0].users_ids) {
         await bot.api.sendMessage(
           user,
-          `👤 В вашу команду вступил игрок${
+          `👤 В вашу команду вступил игрок @${
             ctx.from?.username ? ctx.from?.username : ""
           }.`
         );
@@ -511,32 +517,45 @@ RETURNING *;`,
           "SELECT * FROM level_tasks WHERE level = 2 AND task_type=$1",
           ["friend"]
         );
-        for (const user of friendShipRes.rows[0].users_ids) {
+        for (const user of [...friendShipRes.rows[0].users_ids, ctx.from?.id]) {
           await db.query(
             "UPDATE tasks_status SET status = $1 WHERE user_id = $2 AND task_id = $3",
             ["completed", user, r.rows[0].id]
           );
+          await db.query("UPDATE users SET points = points + 3 WHERE id = $1", [
+            user,
+          ]);
+          try {
+            await ctx.editMessageReplyMarkup();
+          } catch {}
           await bot.api.sendMessage(
             user,
             " 🎉 Вы выполнили задание на создание команды из 2 человек!"
           );
         }
+        return;
       }
       if ([...friendShipRes.rows[0].users_ids, ctx.from?.id].length === 4) {
         const r = await db.query(
           "SELECT * FROM level_tasks WHERE level = 3 AND task_type=$1",
           ["friend"]
         );
-        await db.query(
-          "UPDATE tasks_status SET status = $1 WHERE user_id = $2 AND task_id = $3",
-          ["completed", user, r.rows[0].id]
-        );
-        try {
-          await ctx.editMessageReplyMarkup();
-        } catch {}
-        await ctx.reply(
-          " 🎉 Вы выполнили задание на создание команды из 4 человек!"
-        );
+        for (const user of [...friendShipRes.rows[0].users_ids, ctx.from?.id]) {
+          await db.query(
+            "UPDATE tasks_status SET status = $1 WHERE user_id = $2 AND task_id = $3",
+            ["completed", user, r.rows[0].id]
+          );
+          await db.query("UPDATE users SET points = points + 3 WHERE id = $1", [
+            user,
+          ]);
+          try {
+            await ctx.editMessageReplyMarkup();
+          } catch {}
+          await bot.api.sendMessage(
+            user,
+            " 🎉 Вы выполнили задание на создание команды из 4 человек!"
+          );
+        }
       }
       return;
     }
@@ -587,16 +606,31 @@ RETURNING *;`,
     user.rows[0].id,
   ]);
 
+  const r = await db.query(
+    "SELECT * FROM level_tasks WHERE level = 2 AND task_type=$1",
+    ["friend"]
+  );
+  await db.query(
+    "UPDATE tasks_status SET status = $1 WHERE task_id = $2 AND user_id = $3",
+    ["waiting_fr", r.rows[0].id, user.rows[0].id]
+  );
   try {
     await ctx.editMessageReplyMarkup();
   } catch {}
   await ctx.reply(
-    `Команда создана! Название вашей команды: ${insertResult.rows[0].name}. 
+    `Команда создана! Название вашей команды: <b>${insertResult.rows[0].name}</b>. 
 
-    Для выполнения уровня необходимо добавить сокомандника.
+Для выполнения уровня необходимо добавить сокомандника.
 
-    Для добавление ваш сокомандник должен ввести ID: ${insertResult.rows[0].id}.`
+Для добавление ваш сокомандник должен ввести ID: ${insertResult.rows[0].id}.`,
+    {
+      parse_mode: "HTML",
+      reply_markup: {
+        remove_keyboard: true,
+      },
+    }
   );
+  await setMenu(ctx);
 };
 
 export const setMenu = async (ctx: Context) => {

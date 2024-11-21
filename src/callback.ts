@@ -8,7 +8,7 @@ import {
   taskTypeText,
 } from "./constants";
 import { db } from "./db";
-import { checkFriendship, isAdmin, reviewTask } from "./helpers";
+import { checkFriendship, reviewTask } from "./helpers";
 import {
   IKUnlockMenu,
   IKOpenMenu,
@@ -56,8 +56,13 @@ export const callbackData = async (ctx: Context) => {
         await ctx.editMessageReplyMarkup();
       } catch {}
       await ctx.reply(
-        `<b><u>Моя команда</u></b>
+        `<b><u>Моя команда</u></b>: 
 
+Название: ${friendship.rows[0].name}
+
+ID: ${friendship.rows[0].id}
+
+Участники:
 ${friends
   .map(
     (item, index) =>

@@ -189,10 +189,17 @@ export async function resetData(ctx: Context) {
     "SELECT * FROM tasks_status WHERE user_id = $1",
     [ctx.from?.id]
   );
+  const user = await db.query("SELECT * FROM users WHERE id = $1", [
+    ctx.from?.id,
+  ]);
   for (const item of tasks.rows) {
     await db.query("DELETE FROM tasks WHERE tasks_status_id = $1", [item.id]);
   }
   await db.query("DELETE FROM tasks_status WHERE user_id = $1", [ctx.from?.id]);
+  await db.query("UPDATE users SET points = 0 WHERE id = $1", [ctx.from?.id]);
+  // await db.query("UPDATE friendships SET points = 0 WHERE id = $1", [
+  //   ctx.from?.id,
+  // ]);
   await db.query(
     format(
       "INSERT INTO tasks_status (task_id, user_id, status, level, friendship_id) VALUES %L",

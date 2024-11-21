@@ -363,3 +363,11 @@
 21.11.2024 04:15:14: TypeError: Cannot read properties of undefined (reading 'getTextAnswer')
 
 21.11.2024 04:16:05: TypeError: Cannot read properties of undefined (reading 'getTextAnswer')
+
+21.11.2024 04:40:38: GrammyError: Call to 'sendMessage' failed! (400: Bad Request: can't parse entities: Unsupported start tag "b:" at byte offset 0)
+
+21.11.2024 04:44:24: error: column "points" of relation "friendships" does not exist
+
+21.11.2024 05:07:55: error: column "status" of relation "level_tasks" does not exist
+
+21.11.2024 05:08:53: error: value "8084698611" is out of range for type integer
