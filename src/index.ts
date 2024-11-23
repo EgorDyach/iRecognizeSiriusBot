@@ -14,6 +14,9 @@ import {
   getTextAnswer,
   getFriendAnswer,
   setMenu,
+  changeCommand,
+  msgForNotStudent,
+  msgForStudent,
 } from "./utils";
 import { callbackData } from "./callback";
 import { SELECT_USER } from "./sqlQueries";
@@ -33,6 +36,9 @@ bot.use(
 
 bot.use(conversations() as Middleware<Context>);
 bot.use(createConversation(greeting) as Middleware<Context>);
+bot.use(createConversation(msgForStudent) as Middleware<Context>);
+bot.use(createConversation(msgForNotStudent) as Middleware<Context>);
+bot.use(createConversation(changeCommand) as Middleware<Context>);
 bot.use(createConversation(createNewTask) as Middleware<Context>);
 bot.use(createConversation(getPhotoAnswer) as Middleware<Context>);
 bot.use(createConversation(getTextAnswer) as Middleware<Context>);

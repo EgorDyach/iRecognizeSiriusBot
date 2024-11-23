@@ -42,9 +42,9 @@ export const IKAdminMenu = new InlineKeyboard()
   .row()
   .text("Разблокировать уровень", "unlockLevelMenu")
   .row()
+  .text("Написать сообщение", "writeMsg")
+  .row()
   .text("Выйти из админов", "leaveAdmin");
-// .text("Удалить задание", "removeTaskMenu")
-// .row()
 
 export const IKUserMenu = new InlineKeyboard()
   .text("🔢 Уровни", "levels")

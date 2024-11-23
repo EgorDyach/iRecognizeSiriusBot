@@ -927,9 +927,9 @@ ${
           await db.query(
             "UPDATE users SET points = points + $1 WHERE id = $2",
             [
-              status_task.rows[0].task_type === "photo"
+              levelTask.rows[0].task_type === "photo"
                 ? 5
-                : status_task.rows[0].task_type === "friend"
+                : levelTask.rows[0].task_type === "friend"
                 ? 3
                 : 1,
               fr,
@@ -939,9 +939,9 @@ ${
         }
       } catch {}
       await db.query("UPDATE users SET points = points + $1 WHERE id = $2", [
-        status_task.rows[0].task_type === "photo"
+        levelTask.rows[0].task_type === "photo"
           ? 5
-          : status_task.rows[0].task_type === "friend"
+          : levelTask.rows[0].task_type === "friend"
           ? 3
           : 1,
         status_task.rows[0].user_id,
@@ -1142,6 +1142,30 @@ _Согласись, не так уж и сложно!_`,
     case "greeting":
       // @ts-ignore
       await ctx.conversation.enter("greeting");
+      break;
+    case "changeCommand":
+      // @ts-ignore
+      if (id === "back") return await ctx.conversation.enter("getFriendAnswer");
+      // @ts-ignore
+      await ctx.conversation.enter("changeCommand");
+      break;
+    case "writeMsg":
+      try {
+        await ctx.editMessageReplyMarkup();
+      } catch {}
+      await ctx.reply("Выберите кому хотите направить сообщение.", {
+        reply_markup: new InlineKeyboard()
+          .text("Студенты-игроки", "sendMessageFor_students")
+          .row()
+          .text("Не игроки (без реги)", "sendMessageFor_notStudents"),
+      });
+      break;
+    case "sendMessageFor":
+      if (id === "students")
+        // @ts-ignore
+        return await ctx.conversation.enter("msgForStudent");
+      // @ts-ignore
+      return await ctx.conversation.enter("msgForNotStudent");
       break;
     default:
       break;
