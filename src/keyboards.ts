@@ -44,6 +44,8 @@ export const IKAdminMenu = new InlineKeyboard()
   .row()
   .text("Написать сообщение", "writeMsg")
   .row()
+  .text("Статистика", "statistic")
+  .row()
   .text("Выйти из админов", "leaveAdmin");
 
 export const IKUserMenu = new InlineKeyboard()

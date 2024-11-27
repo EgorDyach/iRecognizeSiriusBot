@@ -347,12 +347,9 @@ export const getPhotoAnswer = async (
   await ctx.reply(
     "Для выполнения задания пришлите фото-селфи с нужным ответом."
   );
-  const photoRes = await conversation.waitFor(":photo", {
+  let photoRes = await conversation.waitFor("message", {
     otherwise: async (ctx) => {
-      if (
-        ctx.message &&
-        (ctx.message.text === "/menu" || ctx.message.text === "/start")
-      ) {
+      if (ctx.callbackQuery) {
         return;
       }
       try {
@@ -361,11 +358,39 @@ export const getPhotoAnswer = async (
       await ctx.reply("Необходимо прислать фото-селфи с нужным ответом.");
     },
   });
+  let rtext = photoRes.message.text;
+  let rphoto = photoRes.message.photo;
 
+  if (rtext === "/menu" || rtext === "/start") {
+    try {
+      await ctx.editMessageReplyMarkup();
+    } catch {}
+    await setMenu(ctx);
+    return;
+  }
+  while (!rphoto) {
+    try {
+      await ctx.editMessageReplyMarkup();
+    } catch {}
+    await ctx.reply("Необходимо прислать фото-селфи с нужным ответом.");
+    photoRes = await conversation.waitFor("message", {
+      otherwise: async (ctx) => {
+        if (ctx.callbackQuery) {
+          return;
+        }
+        try {
+          await ctx.editMessageReplyMarkup();
+        } catch {}
+        await ctx.reply("Необходимо прислать фото-селфи с нужным ответом.");
+      },
+    });
+    rphoto = photoRes.message.photo;
+    rtext = photoRes.message.text;
+  }
   await db.query(
     "UPDATE tasks_status SET user_answer_photo = $1, user_answer_text = $2, status = $3 WHERE id = $4",
     [
-      photoRes.message?.photo.at(-1)?.file_id || null,
+      rphoto.at(-1)?.file_id || null,
       photoRes.message?.caption || null,
       "checking",
       // @ts-ignore
@@ -499,6 +524,13 @@ export const getFriendAnswer = async (
       );
     }
     if (friendShipRes.rowCount) {
+      const level = await db.query("SELECT * FROM settings");
+      if (level.rows[0] < 3 && friendShipRes.rows[0].users_ids.length >= 2) {
+        try {
+          await ctx.editMessageReplyMarkup();
+        } catch {}
+        return await ctx.reply("Команда заполнена.");
+      }
       if (friendShipRes.rows[0].users_ids.length >= 4) {
         try {
           await ctx.editMessageReplyMarkup();
@@ -873,6 +905,51 @@ export const msgForNotStudent = async (
   for (const user of students.rows) {
     if (res.message?.text) await bot.api.sendMessage(user.id, res.message.text);
   }
+  await ctx.reply("Сообщение отправлено.");
+  await setMenu(ctx);
+};
+export const msgForOneStudent = async (
+  conversation: MyConversation,
+  ctx: MyContext
+) => {
+  await ctx.reply("Пришлите ник игрока в формате @example или ФИО.");
+  const res = await conversation.waitFor("msg:text", {
+    otherwise: async (ctx) =>
+      await ctx.reply("Пришлите ник игрока в формате @example или ФИО."),
+  });
+  if (res.message?.text === "/menu" || res.message?.text === "/start") {
+    await setMenu(ctx);
+    await ctx.conversation.exit();
+  }
+  const students = await db.query(
+    "SELECT * FROM users WHERE nick = $1 OR name = $2",
+    [res.message?.text.slice(1), res.message?.text]
+  );
+  if (!students.rowCount) {
+    await ctx.reply("Не удалось найти игрока с данным ником или ФИО.");
+    await setMenu(ctx);
+    return;
+  }
+  await ctx.reply(`Пришлите сообщение для игрока (${students.rows[0].name}).`);
+  const resText = await conversation.waitFor("msg:text", {
+    otherwise: async (ctx) =>
+      await ctx.reply(
+        `Пришлите сообщение для игрока (${students.rows[0].name}).`
+      ),
+  });
+  if (resText.message?.text === "/menu" || resText.message?.text === "/start") {
+    await setMenu(ctx);
+    await ctx.conversation.exit();
+  }
+  await bot.api.sendMessage(
+    students.rows[0].id,
+    `${resText.message?.text}
+
+<i>С уважением, администраторы флешмоба «Я узнаю Сириус».</i>`,
+    {
+      parse_mode: "HTML",
+    }
+  );
   await ctx.reply("Сообщение отправлено.");
   await setMenu(ctx);
 };

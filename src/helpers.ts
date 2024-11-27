@@ -60,16 +60,27 @@ export const reviewTask = async (ctx: MyContext) => {
     task_status.rows[0].task_id,
   ]);
   const task_data = task.rows[0];
+  const friendship = await db.query("SELECT * FROM friendships WHERE id = $1", [
+    user_data.friendship_id,
+  ]);
+
+  const usersFromFriendship = await db.query(
+    `SELECT * FROM users WHERE id in (${(
+      friendship.rows[0]?.users_ids ?? [0]
+    ).map((_: any, index: number) => `$${index + 1}`)})`,
+    [...(friendship.rows[0]?.users_ids ?? [0])]
+  );
   const photos = [
-    user_data && user_data.photo
-      ? [InputMediaBuilder.photo(user_data.photo)]
-      : [],
     task_data && task_data.photo
       ? [InputMediaBuilder.photo(task_data.photo)]
       : [],
     task_status_data && task_status_data.user_answer_photo
       ? [InputMediaBuilder.photo(task_status_data.user_answer_photo)]
       : [],
+    ...(task_data.level >= 3 && !!friendship.rowCount
+      ? usersFromFriendship.rows
+      : [user_data]
+    ).map((el) => InputMediaBuilder.photo(el.photo)),
   ].flat();
   try {
     await ctx.editMessageReplyMarkup();
@@ -89,18 +100,25 @@ export const reviewTask = async (ctx: MyContext) => {
   await ctx.reply(
     `📝 Отчет от @${user_data.nick} (${user_data.name}):
 
-1. Фото участника
 ${
   task_data.photo
-    ? `2. Фото из задания
+    ? `• Фото из задания
   `
     : ""
 }
 ${
   task_status_data.user_answer_photo
-    ? `3. Фото из отчета участника
+    ? `• Фото из отчета участника
   `
     : ""
+}
+${
+  task_data.level >= 3 && !!friendship.rowCount
+    ? `Участник с командой (${friendship.rows[0].name}):
+${usersFromFriendship.rows
+  .map((el) => `• ${el.name} (${el.nick ? `@${el.nick}` : `Без ника`})`)
+  .join("\n")}`
+    : `• Фото участника`
 }
 ––––––––––––––––––––––
 👉🏻 Задание: ${task_data.task}${

@@ -17,6 +17,7 @@ import {
   changeCommand,
   msgForNotStudent,
   msgForStudent,
+  msgForOneStudent,
 } from "./utils";
 import { callbackData } from "./callback";
 import { SELECT_USER } from "./sqlQueries";
@@ -37,6 +38,7 @@ bot.use(
 bot.use(conversations() as Middleware<Context>);
 bot.use(createConversation(greeting) as Middleware<Context>);
 bot.use(createConversation(msgForStudent) as Middleware<Context>);
+bot.use(createConversation(msgForOneStudent) as Middleware<Context>);
 bot.use(createConversation(msgForNotStudent) as Middleware<Context>);
 bot.use(createConversation(changeCommand) as Middleware<Context>);
 bot.use(createConversation(createNewTask) as Middleware<Context>);

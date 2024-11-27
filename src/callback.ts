@@ -913,31 +913,37 @@ ${
         "completed",
         id,
       ]);
-      try {
-        const friendshipTeam = await db.query(
-          `SELECT * FROM friendships WHERE $1 in (users_ids)`,
-          [id]
-        );
-        const friendshipTeam_ = await db.query(
-          `SELECT * FROM friendships WHERE $1 in users_ids`,
-          [id]
-        );
-        console.log(friendshipTeam, friendshipTeam_);
-        for (const fr of friendshipTeam.rows[0].users_ids) {
-          await db.query(
-            "UPDATE users SET points = points + $1 WHERE id = $2",
-            [
-              levelTask.rows[0].task_type === "photo"
-                ? 5
-                : levelTask.rows[0].task_type === "friend"
-                ? 3
-                : 1,
-              fr,
-            ]
+      if (levelTask.rows[0].level >= 3) {
+        try {
+          const friendshipTeam = await db.query(
+            `SELECT * FROM friendships WHERE $1 in (users_ids)`,
+            [id]
           );
-          await bot.api.sendMessage(fr, `🤝 Ваш сокомандник выполнил задание!`);
-        }
-      } catch {}
+
+          for (const fr of friendshipTeam.rows[0].users_ids) {
+            const t = await db.query(
+              "SELECT * FROM tasks_status WHERE task_id = $1 AND user_id = $2",
+              [levelTask.rows[0].id, fr]
+            );
+            if (t.rows[0].status !== "completed")
+              await db.query(
+                "UPDATE users SET points = points + $1 WHERE id = $2",
+                [
+                  levelTask.rows[0].task_type === "photo"
+                    ? 5
+                    : levelTask.rows[0].task_type === "friend"
+                    ? 3
+                    : 1,
+                  fr,
+                ]
+              );
+            await bot.api.sendMessage(
+              fr,
+              `🤝 Ваш сокомандник выполнил задание!`
+            );
+          }
+        } catch {}
+      }
       await db.query("UPDATE users SET points = points + $1 WHERE id = $2", [
         levelTask.rows[0].task_type === "photo"
           ? 5
@@ -1157,16 +1163,63 @@ _Согласись, не так уж и сложно!_`,
         reply_markup: new InlineKeyboard()
           .text("Студенты-игроки", "sendMessageFor_students")
           .row()
-          .text("Не игроки (без реги)", "sendMessageFor_notStudents"),
+          .text("Не игроки (без реги)", "sendMessageFor_notStudents")
+          .row()
+          .text("Конкретный игрок", "sendMessageFor_oneStudent"),
       });
       break;
     case "sendMessageFor":
       if (id === "students")
         // @ts-ignore
         return await ctx.conversation.enter("msgForStudent");
+      if (id === "oneStudent")
+        // @ts-ignore
+        return await ctx.conversation.enter("msgForOneStudent");
       // @ts-ignore
       return await ctx.conversation.enter("msgForNotStudent");
+    case "statistic":
+      const users = await db.query("SELECT * FROM users ORDER BY points DESC");
+      const friendships = await db.query("SELECT * FROM friendships");
+      const tasksStat = await db.query("SELECT * FROM tasks");
+      await ctx.reply(
+        `Статистика на ${new Date().toLocaleDateString()} ${new Date().toLocaleTimeString()}:
+
+🔢 Всего участников: <b>${users.rowCount} чел.</b>
+👤 Зарегестрировавшихся участников: <b>${
+          users.rows.filter((el) => el.role === "student").length
+        } чел.</b>
+📋 Всего выполнено заданий: <b>${tasksStat.rowCount} чел.</b> 
+🤝 Команд: <b>${friendships.rowCount} шт.</b>
+
+🏆 Топ по баллам:
+${(() => {
+  const newUsers: Record<string, any[]> = {};
+  while (Object.keys(newUsers).length < 5 && users.rows.length) {
+    if (newUsers[users.rows[0].points])
+      newUsers[users.rows[0].points].push(users.rows[0]);
+    else newUsers[users.rows[0].points] = [users.rows[0]];
+    users.rows.shift();
+  }
+
+  return `${Object.keys(newUsers)
+    .map(
+      (el, index) =>
+        `${index + 1}. ${newUsers[el].map((q) => q.name).join(", ")} - ${plural(
+          Number(el),
+          "%d балл",
+          "%d балла",
+          "%d баллов"
+        )}`
+    )
+    .join("\n")}`;
+})()}`,
+        {
+          parse_mode: "HTML",
+        }
+      );
+      await setMenu(ctx);
       break;
+
     default:
       break;
   }
