@@ -608,6 +608,20 @@ LIMIT 10;`);
             `${
               !allLevels.rows.filter(
                 (el) =>
+                  el.level === -1 &&
+                  el.status !== "completed" &&
+                  el.status !== "skipped"
+              ).length
+                ? "✅ "
+                : "🏆 "
+            }Бонусный уровень`,
+            "levelMenu_-1"
+          )
+          .row()
+          .text(
+            `${
+              !allLevels.rows.filter(
+                (el) =>
                   el.level === 0 &&
                   el.status !== "completed" &&
                   el.status !== "skipped"
@@ -821,6 +835,8 @@ LIMIT 10;`);
       await ctx.reply(
         id === "0"
           ? "Пробный уровень"
+          : id === "-1"
+          ? "Бонусный уровень"
           : `Уровень ${id === "5" ? '"Финал"' : id}`,
         {
           reply_markup: tasksKeyboard,
@@ -892,6 +908,10 @@ ${
           // @ts-ignore
           await ctx.conversation.enter("getFriendAnswer");
           break;
+        case "bon_photo":
+          // @ts-ignore
+          await ctx.conversation.enter("getPhotoAnswer");
+          break;
         default:
           break;
       }
@@ -947,7 +967,8 @@ ${
       await db.query("UPDATE users SET points = points + $1 WHERE id = $2", [
         levelTask.rows[0].task_type === "photo"
           ? 5
-          : levelTask.rows[0].task_type === "friend"
+          : levelTask.rows[0].task_type === "friend" ||
+            levelTask.rows[0].task_type === "bon_photo"
           ? 3
           : 1,
         status_task.rows[0].user_id,
@@ -957,6 +978,8 @@ ${
         `Ваше задание (${
           status_task.rows[0].level === 0
             ? "Пробный уровень"
+            : status_task.rows[0].level === -1
+            ? "Бонусный уровень"
             : `Уровень ${
                 status_task.rows[0].level === 5
                   ? '"Финал"'

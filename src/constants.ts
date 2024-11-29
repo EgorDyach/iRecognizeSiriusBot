@@ -26,6 +26,8 @@ export const taskTypeEmoji = {
 };
 
 export const taskTypeText = {
+  bon_photo: "🏆 Бонусное фото-задание",
+  bon_basic: "🏆 Бонусное простое задание",
   photo: "📸 Фото-задание",
   friend: "👥 Собери команду",
   basic: "📝 Простое задание",
@@ -40,6 +42,8 @@ export const tasksKeyboardEmoji = {
 };
 
 export const tasksKeyboardName = {
+  bon_photo: "Бонусное фото-задание",
+  bon_basic: "Бонусное простое задание",
   photo: "Фото-задание",
   friend: "Дружеское задание",
   basic: "Задание",
