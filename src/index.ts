@@ -170,7 +170,9 @@ bot.start({
       await db.query(`CREATE TABLE tasks (
   id SERIAL PRIMARY KEY,
   tasks_status_id INT,
-  checked_by BIGINT
+  checked_by BIGINT,
+  is_accepted BOOLEAN,
+  date_checked VARCHAR(50)
 )`);
     }
     try {
@@ -188,6 +190,18 @@ bot.start({
   ID SERIAL PRIMARY KEY,
   name VARCHAR(50),
   is_busy BOOLEAN
+  )`);
+    }
+    try {
+      await db.query("SELECT * FROM points_history");
+    } catch (e) {
+      await db.query(`CREATE TABLE points_history (
+  ID SERIAL PRIMARY KEY,
+  user_id BIGINT,
+  task_id INT, 
+  date VARCHAR(50),
+  count INT,
+  comment VARCHAR(250)
   )`);
     }
   },

@@ -918,8 +918,8 @@ ${
       break;
     case "reviewAccept":
       await db.query(
-        "UPDATE tasks SET checked_by = $1 WHERE tasks_status_id = $2",
-        [ctx.from?.id, id]
+        "UPDATE tasks SET checked_by = $1, date_checked = $2, is_accepted=$3 WHERE tasks_status_id = $4",
+        [ctx.from?.id, new Date().toISOString(), true, id]
       );
       const status_task = await db.query(
         "SELECT * FROM tasks_status WHERE id = $1",
@@ -933,37 +933,6 @@ ${
         "completed",
         id,
       ]);
-      if (levelTask.rows[0].level >= 3) {
-        try {
-          const friendshipTeam = await db.query(
-            `SELECT * FROM friendships WHERE $1 in (users_ids)`,
-            [id]
-          );
-
-          for (const fr of friendshipTeam.rows[0].users_ids) {
-            const t = await db.query(
-              "SELECT * FROM tasks_status WHERE task_id = $1 AND user_id = $2",
-              [levelTask.rows[0].id, fr]
-            );
-            if (t.rows[0].status !== "completed")
-              await db.query(
-                "UPDATE users SET points = points + $1 WHERE id = $2",
-                [
-                  levelTask.rows[0].task_type === "photo"
-                    ? 5
-                    : levelTask.rows[0].task_type === "friend"
-                    ? 3
-                    : 1,
-                  fr,
-                ]
-              );
-            await bot.api.sendMessage(
-              fr,
-              `🤝 Ваш сокомандник выполнил задание!`
-            );
-          }
-        } catch {}
-      }
       await db.query("UPDATE users SET points = points + $1 WHERE id = $2", [
         levelTask.rows[0].task_type === "photo"
           ? 5
@@ -973,6 +942,21 @@ ${
           : 1,
         status_task.rows[0].user_id,
       ]);
+      await db.query(
+        "INSERT INTO points_history (user_id, task_id, date, count, comment) VALUES ($1, $2, $3, $4, $5)",
+        [
+          status_task.rows[0].user_id,
+          status_task.rows[0].task_id,
+          new Date().toISOString(),
+          levelTask.rows[0].task_type === "photo"
+            ? 5
+            : levelTask.rows[0].task_type === "friend" ||
+              levelTask.rows[0].task_type === "bon_photo"
+            ? 3
+            : 1,
+          `${status_task.rows[0].user_id} done task`,
+        ]
+      );
       await bot.api.sendMessage(
         status_task.rows[0].user_id,
         `Ваше задание (${
@@ -988,6 +972,136 @@ ${
         }, ${
           taskTypeText[levelTask.rows[0].task_type as keyof typeof taskTypeText]
         }) принято, обновите меню! 🎉`
+      );
+      return reviewTask(ctx as MyContext);
+    case "reviewAccept1Dop":
+      await db.query(
+        "UPDATE tasks SET checked_by = $1, date_checked = $2, is_accepted=$3 WHERE tasks_status_id = $4",
+        [ctx.from?.id, new Date().toISOString(), true, id]
+      );
+
+      const status_task_ = await db.query(
+        "SELECT * FROM tasks_status WHERE id = $1",
+        [id]
+      );
+
+      const levelTask_ = await db.query(
+        "SELECT * FROM level_tasks WHERE id = $1",
+        [status_task_.rows[0].task_id]
+      );
+      await db.query("UPDATE tasks_status SET status = $1 WHERE id = $2", [
+        "completed",
+        id,
+      ]);
+      await db.query("UPDATE users SET points = points + $1 WHERE id = $2", [
+        5,
+        status_task_.rows[0].user_id,
+      ]);
+      await db.query(
+        "INSERT INTO points_history (user_id, task_id, date, count, comment) VALUES ($1, $2, $3, $4, $5)",
+        [
+          status_task_.rows[0].user_id,
+          status_task_.rows[0].task_id,
+          new Date().toISOString(),
+          5,
+          `${status_task_.rows[0].user_id} done task`,
+        ]
+      );
+      await db.query("UPDATE users SET points = points + $1 WHERE id = $2", [
+        1,
+        status_task_.rows[0].user_id,
+      ]);
+      await db.query(
+        "INSERT INTO points_history (user_id, task_id, date, count, comment) VALUES ($1, $2, $3, $4, $5)",
+        [
+          status_task_.rows[0].user_id,
+          status_task_.rows[0].task_id,
+          new Date().toISOString(),
+          1,
+          `${status_task_.rows[0].user_id} done with 1 dop point`,
+        ]
+      );
+      await bot.api.sendMessage(
+        status_task_.rows[0].user_id,
+        `Ваше задание (${
+          status_task_.rows[0].level === 0
+            ? "Пробный уровень"
+            : status_task_.rows[0].level === -1
+            ? "Бонусный уровень"
+            : `Уровень ${
+                status_task_.rows[0].level === 5
+                  ? '"Финал"'
+                  : status_task_.rows[0].level
+              }`
+        }, ${
+          taskTypeText[
+            levelTask_.rows[0].task_type as keyof typeof taskTypeText
+          ]
+        }) принято, а также вам добавлен 1 балл за неполную команду на фото, обновите меню! 🎉`
+      );
+      return reviewTask(ctx as MyContext);
+    case "reviewAccept2Dop":
+      await db.query(
+        "UPDATE tasks SET checked_by = $1, date_checked = $2, is_accepted=$3 WHERE tasks_status_id = $4",
+        [ctx.from?.id, new Date().toISOString(), true, id]
+      );
+      const status_task__ = await db.query(
+        "SELECT * FROM tasks_status WHERE id = $1",
+        [id]
+      );
+      const levelTask__ = await db.query(
+        "SELECT * FROM level_tasks WHERE id = $1",
+        [status_task__.rows[0].task_id]
+      );
+      await db.query("UPDATE tasks_status SET status = $1 WHERE id = $2", [
+        "completed",
+        id,
+      ]);
+      await db.query("UPDATE users SET points = points + $1 WHERE id = $2", [
+        5,
+        status_task__.rows[0].user_id,
+      ]);
+      await db.query(
+        "INSERT INTO points_history (user_id, task_id, date, count, comment) VALUES ($1, $2, $3, $4, $5)",
+        [
+          status_task__.rows[0].user_id,
+          status_task__.rows[0].task_id,
+          new Date().toISOString(),
+          5,
+          `${status_task__.rows[0].user_id} done task`,
+        ]
+      );
+      await db.query("UPDATE users SET points = points + $1 WHERE id = $2", [
+        2,
+        status_task__.rows[0].user_id,
+      ]);
+      await db.query(
+        "INSERT INTO points_history (user_id, task_id, date, count, comment) VALUES ($1, $2, $3, $4, $5)",
+        [
+          status_task__.rows[0].user_id,
+          status_task__.rows[0].task_id,
+          new Date().toISOString(),
+          2,
+          `${status_task__.rows[0].user_id} done task`,
+        ]
+      );
+      await bot.api.sendMessage(
+        status_task__.rows[0].user_id,
+        `Ваше задание (${
+          status_task__.rows[0].level === 0
+            ? "Пробный уровень"
+            : status_task__.rows[0].level === -1
+            ? "Бонусный уровень"
+            : `Уровень ${
+                status_task__.rows[0].level === 5
+                  ? '"Финал"'
+                  : status_task__.rows[0].level
+              }`
+        }, ${
+          taskTypeText[
+            levelTask__.rows[0].task_type as keyof typeof taskTypeText
+          ]
+        }) принято, вам добавлено 2 балла за полную команду на фото, обновите меню! 🎉`
       );
       return reviewTask(ctx as MyContext);
     case "reviewDecline":
@@ -1217,7 +1331,7 @@ _Согласись, не так уж и сложно!_`,
 🏆 Топ по баллам:
 ${(() => {
   const newUsers: Record<string, any[]> = {};
-  while (Object.keys(newUsers).length < 5 && users.rows.length) {
+  while (Object.keys(newUsers).length <= 5 && users.rows.length) {
     if (newUsers[users.rows[0].points])
       newUsers[users.rows[0].points].push(users.rows[0]);
     else newUsers[users.rows[0].points] = [users.rows[0]];

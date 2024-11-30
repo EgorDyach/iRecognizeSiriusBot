@@ -426,8 +426,20 @@ export const getFriendAnswer = async (
     try {
       await ctx.editMessageReplyMarkup();
     } catch {}
+    const task = await db.query("SELECT * FROM tasks_status WHERE id = $1", [
+      // @ts-ignore
+      ctx.session.taskId,
+    ]);
+    if (task.rows[0].level !== 2 && task.rows[0].level !== 3) {
+      await ctx.reply(
+        "Не удалось найти задание. Обратитесь к администраторам @djekti."
+      );
+      return;
+    }
     await ctx.reply(
-      "У вас уже имеется команда. Вы можете перейдите в другую команду или же дождаться, пока в вашей команде наберется 4 человека. Задание зачтется автоматически.",
+      `У вас уже имеется команда. Вы можете перейдите в другую команду или же дождаться, пока в вашей команде наберется ${
+        task.rows[0].level === 2 ? 2 : 4
+      } человека. Задание зачтется автоматически.`,
       {
         reply_markup: new InlineKeyboard()
           .text("🔄 Перейти в другую команду", "changeCommand")
@@ -469,10 +481,7 @@ export const getFriendAnswer = async (
     text = res.message?.text;
   }
   if (text === "Присоединиться") {
-    const myKeyboard = new Keyboard()
-      .text("Создать команду")
-      .text("В меню")
-      .resized();
+    const myKeyboard = new Keyboard().text("В меню").resized();
     try {
       await ctx.editMessageReplyMarkup();
     } catch {}
@@ -492,16 +501,18 @@ export const getFriendAnswer = async (
         ),
     });
     let id = res.message?.text;
-    if (id === "В меню") {
+    if (id === "В меню" || id === "/menu" || id === "/start") {
       await setMenu(ctx);
       return;
     }
-    let friendShipRes = await db.query(
-      "SELECT * FROM friendships WHERE id = $1;",
-      [id]
-    );
+    let friendShipRes;
+    if (!isNaN(Number(id)))
+      friendShipRes = await db.query(
+        "SELECT * FROM friendships WHERE id = $1;",
+        [id]
+      );
 
-    while (!friendShipRes.rowCount && id !== "Создать команду") {
+    while (friendShipRes && !friendShipRes.rowCount) {
       await ctx.reply(
         "Не удалось найти такую команду. Убедитесь в правильности ID и введите заново ID.",
         {
@@ -518,24 +529,41 @@ export const getFriendAnswer = async (
           ),
       });
       id = res.message?.text;
-      friendShipRes = await db.query(
-        "SELECT * FROM friendships WHERE id = $1;",
-        [id]
-      );
+      if (!isNaN(Number(id)))
+        friendShipRes = await db.query(
+          "SELECT * FROM friendships WHERE id = $1;",
+          [id]
+        );
+    }
+    if (!friendShipRes) {
+      await ctx.reply("Не удалось найти команду.", {
+        reply_markup: { remove_keyboard: true },
+      });
+      await setMenu(ctx);
+      return;
     }
     if (friendShipRes.rowCount) {
-      const level = await db.query("SELECT * FROM settings");
-      if (level.rows[0] < 3 && friendShipRes.rows[0].users_ids.length >= 2) {
+      const task_status = await db.query(
+        "SELECT * FROM tasks_status WHERE id = $1",
+        [
+          // @ts-ignore
+          ctx.session.taskId,
+        ]
+      );
+      if (
+        (task_status.rows[0].level < 3 &&
+          friendShipRes.rows[0].users_ids.length >= 2) ||
+        (task_status.rows[0].level >= 3 &&
+          friendShipRes.rows[0].users_ids.length >= 4)
+      ) {
         try {
           await ctx.editMessageReplyMarkup();
         } catch {}
-        return await ctx.reply("Команда заполнена.");
-      }
-      if (friendShipRes.rows[0].users_ids.length >= 4) {
-        try {
-          await ctx.editMessageReplyMarkup();
-        } catch {}
-        return await ctx.reply("Команда заполнена.");
+        return await ctx.reply("Команда заполнена.", {
+          reply_markup: {
+            remove_keyboard: true,
+          },
+        });
       }
       const user = await db.query(SELECT_USER, [ctx.from?.id]);
       await db.query(
@@ -549,6 +577,19 @@ export const getFriendAnswer = async (
           friendShipRes.rows[0].id,
         ]
       );
+      await db.query(
+        "UPDATE friendships SET users_nicks = $1, users_ids = $2 WHERE id = $3",
+        [
+          friendShipRes.rows[0].users_nicks.filter(
+            (el: string) => el !== user.rows[0].nick
+          ),
+
+          friendShipRes.rows[0].users_ids.filter(
+            (el: number) => el !== user.rows[0].id
+          ),
+          user.rows[0].friendship_id,
+        ]
+      );
       const t = await db.query(
         `UPDATE users 
 SET friendship_id = $1 
@@ -560,6 +601,7 @@ RETURNING *;`,
         await ctx.editMessageReplyMarkup();
       } catch {}
       await ctx.reply(`Добавили вас в команду ${friendShipRes.rows[0].name}.`);
+      await setMenu(ctx);
       for (const user of friendShipRes.rows[0].users_ids) {
         await bot.api.sendMessage(
           user,
@@ -581,6 +623,10 @@ RETURNING *;`,
           await db.query("UPDATE users SET points = points + 3 WHERE id = $1", [
             user,
           ]);
+          await db.query(
+            "INSERT INTO points_history (user_id, task_id, date, count, comment) VALUES ($1, $2, $3, $4, $5)",
+            [user, r.rows[0].id, new Date().toISOString(), 3, `made 2 team`]
+          );
           try {
             await ctx.editMessageReplyMarkup();
           } catch {}
@@ -604,6 +650,10 @@ RETURNING *;`,
           await db.query("UPDATE users SET points = points + 3 WHERE id = $1", [
             user,
           ]);
+          await db.query(
+            "INSERT INTO points_history (user_id, task_id, date, count, comment) VALUES ($1, $2, $3, $4, $5)",
+            [user, r.rows[0].id, new Date().toISOString(), 3, `made 4 team`]
+          );
           try {
             await ctx.editMessageReplyMarkup();
           } catch {}
@@ -662,14 +712,32 @@ RETURNING *;`,
     user.rows[0].id,
   ]);
 
-  const r2 = await db.query(
-    "SELECT * FROM level_tasks WHERE level = 2 AND task_type=$1",
-    ["friend"]
-  );
+  const r = await db.query("SELECT * FROM level_tasks WHERE task_type=$1", [
+    "friend",
+  ]);
 
+  console.log(
+    `SELECT * FROM tasks_status WHERE user_id = $1 AND task_id in (${r.rows.map(
+      (_, index) => index + 2
+    )})`,
+    [ctx.from?.id, ...r.rows.map((el) => el.id)]
+  );
+  const user_tasks = await db.query(
+    `SELECT * FROM tasks_status WHERE user_id = $1 AND task_id in (${r.rows.map(
+      (_, index) => `$${index + 2}`
+    )})`,
+    [ctx.from?.id, ...r.rows.map((el) => el.id)]
+  );
+  console.log(r.rows);
   await db.query(
     "UPDATE tasks_status SET status = $1 WHERE task_id = $2 AND user_id = $3",
-    ["waiting_fr", r2.rows[0].id, user.rows[0].id]
+    [
+      "waiting_fr",
+      user_tasks.rows[0].status === "not completed"
+        ? user_tasks.rows[0].id
+        : user_tasks.rows[1].id,
+      user.rows[0].id,
+    ]
   );
 
   try {
@@ -747,6 +815,9 @@ export const changeCommand = async (
     "SELECT * FROM tasks_status WHERE task_id = $1 AND user_id = $2",
     [t.rows[0].id, ctx.from?.id]
   );
+  const user = await db.query("SELECT * FROM users WHERE id = $1", [
+    ctx.from?.id,
+  ]);
   try {
     await ctx.editMessageReplyMarkup();
   } catch {}
@@ -760,32 +831,47 @@ export const changeCommand = async (
     }
   );
   const msg = await conversation.waitFor("msg:text", {
-    otherwise: async (ctx) =>
-      await ctx.reply("Необходимо прислать ID новой команды."),
+    otherwise: async (ctx) => {
+      if (ctx.callbackQuery) {
+        return;
+      }
+      await ctx.reply("Необходимо прислать ID новой команды.");
+    },
   });
   let id = msg.message?.text;
-  if (msg.message?.text === "/start" || msg.message?.text === "/menu") return;
-  let friendShipRes = await db.query(
-    "SELECT * FROM friendships WHERE id = $1;",
-    [msg.message?.text]
-  );
-  const myKeyboard = new Keyboard()
-    .text("< Назад")
-    .row()
-    .text("Меню")
-    .resized();
+  if (msg.message?.text === "/start" || msg.message?.text === "/menu") {
+    await setMenu(ctx);
+    return;
+  }
+  let friendShipRes;
+  if (!isNaN(Number(id)))
+    friendShipRes = await db.query("SELECT * FROM friendships WHERE id = $1;", [
+      msg.message?.text,
+    ]);
+  const myKeyboard = new Keyboard().text("< Назад").text("Меню").resized();
   while (
-    !friendShipRes.rowCount &&
+    (!friendShipRes ||
+      !friendShipRes.rowCount ||
+      friendShipRes.rows[0].id === user.rows[0].friendship_id) &&
     id !== "/start" &&
     id !== "/menu" &&
-    id !== "< Назад"
+    id !== "< Назад" &&
+    id !== "Меню"
   ) {
-    await ctx.reply(
-      "Не удалось найти такую команду. Убедитесь в правильности ID и введите заново ID.",
-      {
-        reply_markup: myKeyboard,
-      }
-    );
+    if (
+      friendShipRes &&
+      friendShipRes.rowCount &&
+      friendShipRes.rows[0].id === user.rows[0].friendship_id &&
+      !isNaN(Number(id))
+    ) {
+      await ctx.reply("Необходимо ввести id отличный от id вашей команды.");
+    } else
+      await ctx.reply(
+        "Не удалось найти такую команду. Убедитесь в правильности ID и введите заново ID.",
+        {
+          reply_markup: myKeyboard,
+        }
+      );
     const res = await conversation.waitFor(":text", {
       otherwise: async (ctx) => {
         if (ctx.callbackQuery) return;
@@ -798,35 +884,52 @@ export const changeCommand = async (
       },
     });
     id = res.message?.text;
-    friendShipRes = await db.query("SELECT * FROM friendships WHERE id = $1;", [
-      id,
-    ]);
+    if (!isNaN(Number(id)))
+      friendShipRes = await db.query(
+        "SELECT * FROM friendships WHERE id = $1;",
+        [id]
+      );
+    console.log(friendShipRes?.rows);
   }
-  if (id === "/menu" || id === "/menu") {
+  if (id === "/menu" || id === "/start" || id === "Меню" || !friendShipRes) {
+    setMenu(ctx);
     return;
   }
   if (id === "< Назад") {
     await ctx.conversation.exit();
     return await ctx.conversation.enter("changeCommand");
   }
-  if (friendShipRes.rows[0].users_ids.length >= 4) {
+  if (
+    friendShipRes.rows[0].users_ids.length >= (td.rows[0].level === 2 ? 2 : 4)
+  ) {
     try {
       await ctx.editMessageReplyMarkup();
     } catch {}
-    return await ctx.reply("Команда заполнена.");
+    await ctx.reply("Команда заполнена.");
+    return await setMenu(ctx);
   }
-  const user = await db.query("SELECT * FROM users WHERE id = $1", [
+
+  const userFriendship = await db.query(
+    "SELECT * FROM friendships WHERE id = $1",
+    [user.rows[0].friendship_id]
+  );
+  console.log(
+    userFriendship.rows,
     ctx.from?.id,
-  ]);
+    userFriendship.rows[0].users_ids.filter(
+      (el: string | undefined) => el !== ctx.from?.id
+    )
+  );
 
   await db.query(
     "UPDATE friendships SET users_nicks = $1, users_ids = $2 WHERE id = $3",
     [
-      friendShipRes.rows[0].users_nicks.filter(
-        (el: string) => el !== ctx.from?.username
+      userFriendship.rows[0].users_nicks.filter(
+        (el: string) =>
+          (el || "").toLowerCase() !== (ctx.from?.username || "").toLowerCase()
       ),
-      friendShipRes.rows[0].users_ids.filter(
-        (el: string | undefined) => el !== ctx.from?.id
+      userFriendship.rows[0].users_ids.filter(
+        (el: string | undefined) => el !== ctx.from?.id + ""
       ),
       user.rows[0].friendship_id,
     ]
@@ -861,6 +964,10 @@ ID: ${friendShipRes.rows[0].id}.`);
       await db.query("UPDATE users SET points = points + 3 WHERE id = $1", [
         user,
       ]);
+      await db.query(
+        "INSERT INTO points_history (user_id, task_id, date, count, comment) VALUES ($1, $2, $3, $4, $5)",
+        [user, r.rows[0].id, new Date().toISOString(), 3, `change to 4 team`]
+      );
       try {
         await ctx.editMessageReplyMarkup();
       } catch {}
@@ -881,6 +988,18 @@ export const msgForStudent = async (
   const res = await conversation.waitFor("msg:text", {
     otherwise: async (ctx) => await ctx.reply("Пришлите сообщение."),
   });
+  if (
+    res.message?.text === "/menu" ||
+    res.message?.text === "/start" ||
+    !res.message?.text
+  ) {
+    await setMenu(ctx);
+    return;
+  }
+  if (res.message?.text.length <= 10) {
+    ctx.reply("Минимальная длина сообщения от 10 символов.");
+    await setMenu(ctx);
+  }
   const students = await db.query("SELECT * FROM users WHERE role = $1", [
     "student",
   ]);
@@ -899,6 +1018,18 @@ export const msgForNotStudent = async (
   const res = await conversation.waitFor("msg:text", {
     otherwise: async (ctx) => await ctx.reply("Пришлите сообщение."),
   });
+  if (
+    res.message?.text === "/menu" ||
+    res.message?.text === "/start" ||
+    !res.message?.text
+  ) {
+    await setMenu(ctx);
+    return;
+  }
+  if (res.message?.text.length <= 10) {
+    ctx.reply("Минимальная длина сообщения от 10 символов.");
+    await setMenu(ctx);
+  }
   const students = await db.query("SELECT * FROM users WHERE role = $1", [
     "student_not_checked",
   ]);
@@ -937,9 +1068,17 @@ export const msgForOneStudent = async (
         `Пришлите сообщение для игрока (${students.rows[0].name}).`
       ),
   });
-  if (resText.message?.text === "/menu" || resText.message?.text === "/start") {
+  if (
+    res.message?.text === "/menu" ||
+    res.message?.text === "/start" ||
+    !res.message?.text
+  ) {
     await setMenu(ctx);
-    await ctx.conversation.exit();
+    return;
+  }
+  if (res.message?.text.length <= 10) {
+    ctx.reply("Минимальная длина сообщения от 10 символов.");
+    await setMenu(ctx);
   }
   await bot.api.sendMessage(
     students.rows[0].id,

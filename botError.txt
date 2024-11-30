@@ -457,3 +457,41 @@
 27.11.2024 03:17:18: GrammyError: Call to 'sendMediaGroup' failed! (400: Bad Request: can't parse InputMedia: media not found)
 
 27.11.2024 03:39:51: GrammyError: Call to 'sendMediaGroup' failed! (400: Bad Request: failed to send message #1 with the error message "Wrong file identifier/HTTP URL specified")
+
+29.11.2024 23:31:48: GrammyError: Call to 'answerCallbackQuery' failed! (400: Bad Request: query is too old and response timeout expired or query ID is invalid)
+
+30.11.2024 00:41:44: error: syntax error at or near ")"
+
+30.11.2024 01:05:34: error: invalid input syntax for type integer: "Создать команду"
+
+30.11.2024 09:21:21: error: invalid input syntax for type integer: "< Назад"
+
+30.11.2024 09:22:26: error: invalid input syntax for type integer: "< Назад"
+
+30.11.2024 09:23:07: error: invalid input syntax for type integer: "< Назад"
+
+30.11.2024 09:24:30: TypeError: Cannot read properties of undefined (reading 'reenter')
+
+30.11.2024 09:25:44: TypeError: Cannot read properties of undefined (reading 'reenter')
+
+30.11.2024 09:26:13: TypeError: Cannot read properties of undefined (reading 'exit')
+
+30.11.2024 09:26:28: TypeError: Cannot read properties of undefined (reading 'enter')
+
+30.11.2024 10:07:52: error: column "user_id" does not exist
+
+30.11.2024 10:08:40: error: column "task_type" does not exist
+
+30.11.2024 10:14:07: error: bind message supplies 3 parameters, but prepared statement "" requires 1
+
+30.11.2024 10:15:01: error: bind message supplies 3 parameters, but prepared statement "" requires 1
+
+30.11.2024 11:20:05: error: invalid input syntax for type integer: "< Назад"
+
+30.11.2024 11:24:48: TypeError: Cannot read properties of null (reading 'toLowerCase')
+
+30.11.2024 11:42:04: TypeError: Cannot read properties of undefined (reading 'exit')
+
+30.11.2024 11:45:29: TypeError: Cannot read properties of undefined (reading 'id')
+
+30.11.2024 12:31:05: TypeError: Cannot read properties of undefined (reading 'users_ids')

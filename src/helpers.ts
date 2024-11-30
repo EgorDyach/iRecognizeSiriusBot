@@ -28,7 +28,7 @@ export const reviewTask = async (ctx: MyContext) => {
       await ctx.editMessageReplyMarkup();
     } catch {}
     await ctx.replyWithMediaGroup([InputMediaBuilder.photo(user.photo)]);
-    await ctx.reply(
+    const keyboard = await ctx.reply(
       `👤 Новый пользователь:
 
 ТГ-ник: ${user.nick ? `@${user.nick}` : `Без ника`}
@@ -91,10 +91,24 @@ export const reviewTask = async (ctx: MyContext) => {
       "✅ Одобрить",
       `reviewAccept_${uncheckedTasks.rows[0].tasks_status_id}`
     )
-    .text(
-      "❌ Отклонить",
-      `reviewDecline_${uncheckedTasks.rows[0].tasks_status_id}`
+    .row();
+
+  if (task_status_data && task_status_data.user_answer_photo) {
+    IKReview.text(
+      "✅ Одобрить частично (+1 б.)",
+      `reviewAccept1Dop_${uncheckedTasks.rows[0].tasks_status_id}`
     )
+      .row()
+      .text(
+        "✅ Одобрить полностью (+2 б.)",
+        `reviewAccept2Dop_${uncheckedTasks.rows[0].tasks_status_id}`
+      )
+      .row();
+  }
+  IKReview.text(
+    "❌ Отклонить",
+    `reviewDecline_${uncheckedTasks.rows[0].tasks_status_id}`
+  )
     .row()
     .text("В меню", "openMenu");
   await ctx.reply(
@@ -215,6 +229,10 @@ export async function resetData(ctx: Context) {
   }
   await db.query("DELETE FROM tasks_status WHERE user_id = $1", [ctx.from?.id]);
   await db.query("UPDATE users SET points = 0 WHERE id = $1", [ctx.from?.id]);
+  await db.query(
+    "INSERT INTO points_history (user_id, task_id, date, count, comment) VALUES ($1, $2, $3, $4, $5)",
+    [ctx.from?.id, 0, new Date().toISOString(), 0, `null tasks`]
+  );
   // await db.query("UPDATE friendships SET points = 0 WHERE id = $1", [
   //   ctx.from?.id,
   // ]);
