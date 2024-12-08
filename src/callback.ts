@@ -758,33 +758,16 @@ LIMIT 10;`);
           .row()
           .text(
             `${
-              settings.rows[0].level < 5
-                ? "🚫 "
-                : allLevels.rows.filter(
-                    (el) =>
-                      el.level === 4 &&
-                      el.status !== "completed" &&
-                      el.status !== "skipped"
-                  ).length
-                ? "🔒 "
-                : !allLevels.rows.filter(
-                    (el) =>
-                      el.level === 5 &&
-                      el.status !== "completed" &&
-                      el.status !== "skipped"
-                  ).length
-                ? "✅ "
-                : ""
-            }Финал`,
-            settings.rows[0].level < 5 ||
-              allLevels.rows.filter(
+              !allLevels.rows.filter(
                 (el) =>
-                  el.level === 4 &&
+                  el.level === 5 &&
                   el.status !== "completed" &&
                   el.status !== "skipped"
               ).length
-              ? "nothing"
-              : "levelMenu_5"
+                ? "✅ "
+                : ""
+            }Финал`,
+            "levelMenu_5"
           )
           .row()
           .text("В меню", "openMenu"),
